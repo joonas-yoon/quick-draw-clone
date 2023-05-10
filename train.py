@@ -173,7 +173,8 @@ class StorkesDataset(Dataset):
 
 
 # %%
-TRAIN_FILES = sorted(files[:64])
+N_CLASSES = len(files)
+TRAIN_FILES = sorted(files[:128])
 print("Files used in dataset", f"({len(TRAIN_FILES)}):")
 print('\n'.join(TRAIN_FILES), HR)
 
@@ -197,9 +198,9 @@ print(valid_x.shape, valid_y.shape, HR)
 # ### the number of output classes to train
 
 # %%
-n_classes = train_dataset._classes_n
-print("# of classes:", n_classes)
-print("classes to train in this run:", train_dataset._classes, HR)
+print("# of classes:", N_CLASSES)
+print("classes to train in this run: ", train_dataset._classes_n)
+print(train_dataset._classes, HR)
 
 # %%
 
@@ -430,27 +431,23 @@ class StrokeRNN(nn.Module):
 # ### Load previous trained model
 # %%
 # Use trained model if exists
-USE_PREVIOUS_MODEL = True
+USE_PREVIOUS_MODEL = False
 
 # %%
+model = StrokeRNN(out_classes=N_CLASSES, hidden_state=(
+    torch.zeros(2, 128).to(device),
+    torch.zeros(2, 128).to(device),
+))
+print("Model Network:")
+print(model, HR)
+
 if USE_PREVIOUS_MODEL:
     print("Use trained model")
     trained_model = torch.load('model_trained_1.state.pt')
-    model = StrokeRNN(out_classes=n_classes, hidden_state=(
-        torch.zeros(2, 128).to(device),
-        torch.zeros(2, 128).to(device),
-    ))
     model.load_state_dict(trained_model)
 else:
-    print("Create new model to train")
-    model = StrokeRNN(out_classes=n_classes, hidden_state=(
-        torch.zeros(2, 128).to(device),
-        torch.zeros(2, 128).to(device),
-    ))
+    print("Train model from scratch")
 
-model.to(device)
-
-print(model, HR)
 
 # %% [markdown]
 # ### Criterion & Optimizer
@@ -565,8 +562,7 @@ def save_plot(logs: dict, filename: str, **kwargs):
 
 
 # %%
-N_CLASS = len(train_y)
-EPOCH_RUNS = 0
+EPOCH_RUNS = 50
 
 print("epochs =", EPOCH_RUNS)
 
@@ -621,7 +617,8 @@ for epoch in range(EPOCH_RUNS):
         save_plot(logs, "plot_train.png")
 
     # Save model state dict
-    torch.save(model.state_dict(), f'model_trained_{epoch}.state.pt')
+    if epoch % 5 == 0:
+        torch.save(model.state_dict(), f'model_trained_{epoch}.state.pt')
 
 
 # %%
