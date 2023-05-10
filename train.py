@@ -2,6 +2,7 @@
 # ## Importings
 
 # %%
+from sklearn.metrics import accuracy_score
 from typing import Union, List, Optional, Callable
 import torch.optim as optim
 import torch.nn.functional as F
@@ -29,6 +30,10 @@ from glob import glob
 import gc
 gc.enable()
 
+# %%
+# Horizontal line as divider
+HR = "\n" + ("-" * 30) + "\n"
+
 
 # %%
 # Set environment before importing torch
@@ -46,11 +51,7 @@ elif torch.backends.mps.is_available():
 else:
     device = "cpu"  # Defaults to CPU if NVIDIA GPU/Apple GPU aren't available
 
-print('device:', device)
-
-# %%
-# Horizontal line as divider
-HR = "\n" + ("-" * 30) + "\n"
+print('device:', device, HR)
 
 
 # %% [markdown]
@@ -62,14 +63,15 @@ DATASET_DIR = 'dataset/sketches/sketches'
 files = os.listdir(DATASET_DIR)
 # files = sorted(list(filter(lambda p: '.full' in p, files)))
 files = list(map(lambda p: os.path.join(DATASET_DIR, p), files))
-print('dataset files (5 for sample)', files[:5], "\n")
+
 
 # %%
-print("dataset shape of train/valid/test", HR)
+print("dataset shape of train/valid/test (sample)")
 for filepath in files:
     npz = np.load(filepath, encoding='latin1', allow_pickle=True)
     print(filepath, npz["train"].shape, npz["valid"].shape, npz["test"].shape)
     break
+print(HR)
 
 # %%
 
@@ -89,7 +91,7 @@ labels[:10]
 # %%
 word_encoder = LabelEncoder()
 word_encoder.fit(labels)
-print('words', len(word_encoder.classes_), '=>',
+print('target words for output:', len(word_encoder.classes_), '=>',
       ', '.join([x for x in word_encoder.classes_]), HR)
 
 # %%
@@ -171,8 +173,13 @@ class StorkesDataset(Dataset):
 
 
 # %%
+TRAIN_FILES = sorted(files[:64])
+print("Files used in dataset", f"({len(TRAIN_FILES)}):")
+print('\n'.join(TRAIN_FILES), HR)
+
+# %%
 print("Collect dataset to train")
-train_dataset = StorkesDataset(files[:128], "train", max_row=50000)
+train_dataset = StorkesDataset(TRAIN_FILES, "train", max_row=50000)
 train_dataset
 
 # %%
@@ -182,7 +189,7 @@ print(train_x.shape, train_y.shape)
 
 # %%
 print("Collect dataset to valid")
-valid_dataset = StorkesDataset(files[:128], "valid", max_row=1000)
+valid_dataset = StorkesDataset(TRAIN_FILES, "valid", max_row=10000)
 valid_x, valid_y = valid_dataset[:]
 print(valid_x.shape, valid_y.shape, HR)
 
@@ -203,7 +210,7 @@ print("classes to train in this run:", train_dataset._classes, HR)
 # %%
 
 # %%
-BATCH_SIZE = 256
+BATCH_SIZE = 256 + 256
 print("BATCH_SIZE =", BATCH_SIZE, HR)
 
 # %%
@@ -423,19 +430,25 @@ class StrokeRNN(nn.Module):
 # ### Load previous trained model
 # %%
 # Use trained model if exists
-USE_PREVIOUS_MODEL = False
+USE_PREVIOUS_MODEL = True
 
 # %%
 if USE_PREVIOUS_MODEL:
     print("Use trained model")
-    trained_model = torch.load('model_trained.pt')
-    model = trained_model.to(device)
+    trained_model = torch.load('model_trained_1.state.pt')
+    model = StrokeRNN(out_classes=n_classes, hidden_state=(
+        torch.zeros(2, 128).to(device),
+        torch.zeros(2, 128).to(device),
+    ))
+    model.load_state_dict(trained_model)
 else:
     print("Create new model to train")
     model = StrokeRNN(out_classes=n_classes, hidden_state=(
         torch.zeros(2, 128).to(device),
         torch.zeros(2, 128).to(device),
     ))
+
+model.to(device)
 
 print(model, HR)
 
@@ -466,7 +479,7 @@ optimizer = optim.Adam(model.parameters(), lr=1e-3)
 
 
 # %% [markdown]
-# ### Run epoch
+# ### Run g
 
 # %%
 class SyncStream():
@@ -553,7 +566,7 @@ def save_plot(logs: dict, filename: str, **kwargs):
 
 # %%
 N_CLASS = len(train_y)
-EPOCH_RUNS = 10
+EPOCH_RUNS = 0
 
 print("epochs =", EPOCH_RUNS)
 
@@ -604,12 +617,11 @@ for epoch in range(EPOCH_RUNS):
     bar.close()
 
     # Save plot for every 10 epochs
-    if epoch % 10 == 0:
+    if epoch % 2 == 0:
         save_plot(logs, "plot_train.png")
 
     # Save model state dict
-    if epoch % 10 == 0:
-        torch.save(model.state_dict(), f'model_trained_{epoch}.state.pt')
+    torch.save(model.state_dict(), f'model_trained_{epoch}.state.pt')
 
 
 # %%
@@ -628,8 +640,8 @@ save_plot(logs, "plot_train.png")
 
 # %%
 MODEL_OUTPUT_PATH = 'model_trained.pt'
-print("Save model into file:", MODEL_OUTPUT_PATH)
-torch.save(model, MODEL_OUTPUT_PATH, HR)
+torch.save(model, MODEL_OUTPUT_PATH)
+print("Model saved into file:", MODEL_OUTPUT_PATH, HR)
 
 # %%
 
@@ -646,12 +658,12 @@ torch.save(model, MODEL_OUTPUT_PATH, HR)
 # %%
 print("Load dataset to test")
 test_dataset = StorkesDataset(files, "test")
-test_batchs = DataLoader(test_dataset, batch_size=128)
-test_x, test_y = next(iter(test_batchs))
-print(test_x.shape, test_y.shape)
+test_batchs = DataLoader(test_dataset, batch_size=128, shuffle=True)
+test_x, y_true = next(iter(test_batchs))
+print(test_x.shape, y_true.shape)
 
 # %%
-print(word_encoder.classes_[test_y[2]])
+print(word_encoder.classes_[y_true[2]])
 reconstruct_to_images(test_x[2].detach().cpu().numpy().astype(
     int), size=(256, 256), get_final=True)
 
@@ -659,48 +671,103 @@ reconstruct_to_images(test_x[2].detach().cpu().numpy().astype(
 model.eval()
 
 test_batch_x = torch.as_tensor(test_x).type(torch.FloatTensor).to(device)
-test_batch_y = test_y.detach().cpu().numpy()
+test_batch_y = y_true.detach().cpu().numpy()
 
 log_probs = model(test_batch_x)
 test_y_pred = np.argmax(log_probs.detach().cpu(), axis=1)
 
 # %%
-
-ROWS = 5
-COLS = 5
-
-f, axes = plt.subplots(ROWS, COLS, figsize=(30, 30))
-# f.tight_layout()
-for i in range(ROWS):
-    for j in range(COLS):
-        ax = axes[i, j]
-        idx = i * COLS + j
-        nameof = word_encoder.classes_
-        guess = nameof[test_y_pred[idx]]
-        answer = nameof[test_batch_y[idx]]
-        strokes = test_batch_x[idx].detach().cpu().numpy().astype(int)
-
-        ax.set_title(f"Guess: {guess}\nAnswer: {answer}")
-        ax.imshow(reconstruct_to_images(
-            strokes, size=(256, 256), ps=5, get_final=True))
-        ax.axis('off')
-
-# plt.show()
-FIG_OUTPUT_PATH = 'result_sample.png'
-plt.savefig(FIG_OUTPUT_PATH)
-print("Save result figure:", FIG_OUTPUT_PATH, HR)
-
-# %%
+ROWS = 6
+COLS = 6
 
 
-# %%
+def save_result_image(
+    x: list,
+    y_true: list,
+    y_pred: list,
+    filename: str,
+):
+    f, axes = plt.subplots(ROWS, COLS, figsize=(30, 30))
+    for i in range(ROWS):
+        for j in range(COLS):
+            ax = axes[i, j]
+            idx = i * COLS + j
+            nameof = word_encoder.classes_
+            guess = nameof[y_pred[idx]]
+            answer = nameof[y_true[idx]]
+            strokes = x[idx].detach().cpu().numpy().astype(int)
 
-
-# %%
+            ax.set_title(f"Guess: {guess}\nAnswer: {answer}")
+            ax.imshow(reconstruct_to_images(
+                strokes, size=(256, 256), ps=5, get_final=True))
+            ax.axis('off')
+    # plt.show()
+    f.savefig(filename)
+    plt.close(f)
+    print("Save result figure:", filename)
 
 
 # %%
+GRID_SIZE = ROWS * COLS
+FIG_OUTPUT_DIR = 'figures'
 
+os.makedirs(FIG_OUTPUT_DIR, exist_ok=True)
+
+n_pages = min(10, len(train_batchs))
+
+for batch_idx, (test_x, y_true) in enumerate(train_batchs):
+    if batch_idx >= n_pages:
+        break
+
+    test_batch_x = torch.as_tensor(test_x).type(torch.FloatTensor).to(device)
+    test_batch_y = y_true.detach().cpu().numpy()
+
+    log_probs = model(test_batch_x)
+    y_pred = np.argmax(log_probs.detach().cpu(), axis=1)
+
+    filename = f"test_sample_batch_{batch_idx}.png"
+    output_path = os.path.join(FIG_OUTPUT_DIR, filename)
+
+    save_result_image(
+        x=test_x,
+        y_true=y_true,
+        y_pred=y_pred,
+        filename=output_path
+    )
+
+print(HR)
+
+# %%
+
+# %%
+print("Release memory before scoring")
+del train_dataset
+del valid_dataset
+gc.collect()
+
+
+# %%
+print("Scoring with test dataset:")
+
+with SyncStream():
+    test_y_trues = []
+    test_y_preds = []
+
+    for (x, y) in tqdm(test_batchs):
+        batch_x = torch.as_tensor(x).type(torch.FloatTensor).to(device)
+
+        log_probs = model(batch_x)
+        test_y_pred = np.argmax(log_probs.detach().cpu(), axis=1)
+
+        test_y_trues += list(y)
+        test_y_preds += list(test_y_pred)
+
+print(HR)
+
+# %%
+
+acc = accuracy_score(test_y_trues, test_y_preds)
+print("accuracy score:", f"{acc*100:6f}%")
 
 # %%
 
