@@ -500,14 +500,32 @@ else:
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
-scheduler = optim.lr_scheduler.CosineAnnealingLR(
-    optimizer, T_max=50, eta_min=1e-6)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer, mode='min', factor=0.8, patience=5, threshold=1e-3)
 
 # %%
 
 
-# %%
+class EarlyStopper:
+    def __init__(self, patience=1, min_delta=0) -> None:
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_validation_loss = np.inf
 
+    def check(self, validation_loss) -> bool:
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+            return False
+
+
+# %%
+early_stopper = EarlyStopper(patience=6)
 
 # %%
 # torch.cuda.empty_cache()
@@ -687,6 +705,7 @@ for epoch_idx in range(EPOCH_RUNS):
           f'train/valid loss={train_loss:8.4f}/{valid_loss:8.4f} | '
           f'train/valid acc={100*train_acc:4.2f}%/{100*valid_acc:4.2f}%')
 
+    scheduler.step()
 
     # Save log
     if epoch % (LOG_SAVE_INTERVAL or 1) == 0:
@@ -700,6 +719,11 @@ for epoch_idx in range(EPOCH_RUNS):
     # Save model state dict
     if epoch % (MODEL_SAVE_INTERVAL or 1) == 0:
         torch.save(model.state_dict(), f'{MODEL_OUTPUT_NAME}_{epoch}.pt')
+
+    # Early Stop
+    if early_stopper.check(validation_loss=valid_loss):
+        print("Stopped by early stop")
+        break
 
 
 # %%
