@@ -93,9 +93,8 @@ def makedirs(path: str) -> None:
     if len(path) == 0:
         return None
     dirpath = os.path.dirname(path)
-    if dirpath == '':
-        dirpath = path
-    os.makedirs(dirpath, exist_ok=True)
+    if dirpath:
+        os.makedirs(dirpath, exist_ok=True)
 
 
 # %% [markdown]
@@ -186,6 +185,7 @@ def load_datasets(files: list,
         y_class = word_encoder.transform([y_label])[0]
         y_class_reshape = [y_class for _ in range(len(x_data))]
         ys.append(y_class_reshape)
+        bar.update(1)
     bar.close()
     return (np.array(xs), np.array(ys))
 
@@ -436,6 +436,7 @@ class StrokeRNN(nn.Module):
         N_STROKES = MAX_STROKES_LEN
 
         self.conv = nn.Sequential(
+
             nn.Conv1d(in_channels=N_STROKES, out_channels=48, kernel_size=3),
             nn.Dropout(p=0.3),
             nn.Conv1d(in_channels=48, out_channels=64, kernel_size=1),
@@ -499,7 +500,7 @@ else:
 # %%
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(
     optimizer, mode='min', factor=0.8, patience=5, threshold=1e-3)
 
@@ -702,10 +703,10 @@ for epoch_idx in range(EPOCH_RUNS):
     logs["epoch"] = epoch
 
     print(f'epoch={epoch} | '
-          f'train/valid loss={train_loss:8.4f}/{valid_loss:8.4f} | '
-          f'train/valid acc={100*train_acc:4.2f}%/{100*valid_acc:4.2f}%')
+          f'train/valid loss={train_loss:6.4f}/{valid_loss:6.4f} | '
+          f'train/valid acc={100*train_acc:5.3f}%/{100*valid_acc:5.3f}%')
 
-    scheduler.step()
+    scheduler.step(train_loss)
 
     # Save log
     if epoch % (LOG_SAVE_INTERVAL or 1) == 0:
