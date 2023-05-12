@@ -30,9 +30,34 @@ from glob import glob
 import gc
 gc.enable()
 
+print("pytorch version:", torch.__version__)
+
+
 # %%
 # Horizontal line as divider
 HR = "\n" + ("-" * 30) + "\n"
+
+# %%
+# Options
+# - CUDA
+CUDA_GPU_ID = 3
+
+# - Dataset
+DATASET_DIR = 'dataset/sketches/sketches'
+MAX_STROKES_LEN = 128
+TRAIN_SAMPLES_PER_CLASS = 5000
+VALID_SAMPLES_PER_CLASS = 100
+OUT_CLASSES = 345
+
+# - Training
+EPOCH_RUNS = 50
+BATCH_SIZE = 8192
+LEARNING_RATE = 1e-3
+
+# - Logging
+PREVIOUS_MODEL_STATE = None
+MODEL_OUTPUT_NAME = f'model_{MAX_STROKES_LEN}_strokes.pt'
+FIG_OUTPUT_DIR = 'figures'
 
 
 # %%
@@ -40,11 +65,11 @@ HR = "\n" + ("-" * 30) + "\n"
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 os.environ['TORCH_USE_CUDA_DSA'] = "1"
 
+
 # %%
 if torch.cuda.is_available():
-    GPU_ID = 3
     device = torch.device(
-        f'cuda:{GPU_ID}' if torch.cuda.is_available() else 'cpu')
+        f'cuda:{CUDA_GPU_ID}' if torch.cuda.is_available() else 'cpu')
     torch.cuda.set_device(device)
 elif torch.backends.mps.is_available():
     device = "mps"  # Apple GPU
@@ -58,8 +83,6 @@ print('device:', device, HR)
 # ## Prepare to collect dataset
 
 # %%
-DATASET_DIR = 'dataset/sketches/sketches'
-
 files = os.listdir(DATASET_DIR)
 # files = sorted(list(filter(lambda p: '.full' in p, files)))
 files = list(map(lambda p: os.path.join(DATASET_DIR, p), files))
@@ -105,9 +128,6 @@ print('target words for output:', len(word_encoder.classes_), '=>',
 # ds["train"].shape
 
 # %%
-MAX_STROKES_LEN = 128
-
-
 def np_reshape_sequence(stacked_strokes: np.ndarray) -> np.ndarray:
     result = []
     for strokes in stacked_strokes:
@@ -158,7 +178,7 @@ class StorkesDataset(Dataset):
                  is_for: Literal["train", "valid", "test"],
                  max_row: int = 0):
         x, y = load_datasets(files, is_for=is_for, max_row=max_row)
-        self.x = x.reshape(-1, 128, 3)
+        self.x = x.reshape(-1, MAX_STROKES_LEN, 3)
         self.y = y.reshape(-1)
         self._classes = list(set(map(filename_to_label, files)))
         self._classes_n = len(self._classes)
@@ -173,14 +193,14 @@ class StorkesDataset(Dataset):
 
 
 # %%
-N_CLASSES = len(files)
-TRAIN_FILES = sorted(files[:128])
+TRAIN_FILES = sorted(files)
 print("Files used in dataset", f"({len(TRAIN_FILES)}):")
 print('\n'.join(TRAIN_FILES), HR)
 
 # %%
 print("Collect dataset to train")
-train_dataset = StorkesDataset(TRAIN_FILES, "train", max_row=50000)
+train_dataset = StorkesDataset(
+    TRAIN_FILES, "train", max_row=TRAIN_SAMPLES_PER_CLASS)
 train_dataset
 
 # %%
@@ -190,7 +210,8 @@ print(train_x.shape, train_y.shape)
 
 # %%
 print("Collect dataset to valid")
-valid_dataset = StorkesDataset(TRAIN_FILES, "valid", max_row=10000)
+valid_dataset = StorkesDataset(
+    TRAIN_FILES, "valid", max_row=VALID_SAMPLES_PER_CLASS)
 valid_x, valid_y = valid_dataset[:]
 print(valid_x.shape, valid_y.shape, HR)
 
@@ -198,7 +219,7 @@ print(valid_x.shape, valid_y.shape, HR)
 # ### the number of output classes to train
 
 # %%
-print("# of classes:", N_CLASSES)
+print("# of classes:", OUT_CLASSES)
 print("classes to train in this run: ", train_dataset._classes_n)
 print(train_dataset._classes, HR)
 
@@ -211,7 +232,6 @@ print(train_dataset._classes, HR)
 # %%
 
 # %%
-BATCH_SIZE = 256 + 256
 print("BATCH_SIZE =", BATCH_SIZE, HR)
 
 # %%
@@ -390,19 +410,23 @@ class StrokeRNN(nn.Module):
     def __init__(self, out_classes: int, hidden_state: tuple):
         super().__init__()
 
+        N_STROKES = MAX_STROKES_LEN
+
         self.conv = nn.Sequential(
-            nn.Conv1d(in_channels=128, out_channels=48, kernel_size=3),
+            nn.Conv1d(in_channels=N_STROKES, out_channels=48, kernel_size=3),
             nn.Dropout(p=0.3),
             nn.Conv1d(in_channels=48, out_channels=64, kernel_size=1),
             nn.Dropout(p=0.3),
             nn.Conv1d(in_channels=64, out_channels=96, kernel_size=1),
             nn.Dropout(p=0.3),
         )
-        self.lstm1 = nn.LSTM(input_size=96, hidden_size=128, num_layers=2)
-        self.lstm2 = nn.LSTM(input_size=128, hidden_size=128, num_layers=2)
+        self.lstm1 = nn.LSTM(
+            input_size=96, hidden_size=N_STROKES, num_layers=2)
+        self.lstm2 = nn.LSTM(input_size=N_STROKES,
+                             hidden_size=N_STROKES, num_layers=2)
         self.fc = nn.Sequential(
             nn.Dropout(p=0.3),
-            nn.Linear(in_features=128, out_features=out_classes),
+            nn.Linear(in_features=N_STROKES, out_features=out_classes),
         )
         self.hidden_state = hidden_state
 
@@ -434,9 +458,9 @@ class StrokeRNN(nn.Module):
 USE_PREVIOUS_MODEL = False
 
 # %%
-model = StrokeRNN(out_classes=N_CLASSES, hidden_state=(
-    torch.zeros(2, 128).to(device),
-    torch.zeros(2, 128).to(device),
+model = StrokeRNN(out_classes=OUT_CLASSES, hidden_state=(
+    torch.zeros(2, MAX_STROKES_LEN).to(device),
+    torch.zeros(2, MAX_STROKES_LEN).to(device),
 ))
 print("Model Network:")
 print(model, HR)
@@ -562,8 +586,6 @@ def save_plot(logs: dict, filename: str, **kwargs):
 
 
 # %%
-EPOCH_RUNS = 50
-
 print("epochs =", EPOCH_RUNS)
 
 model.to(device)
@@ -655,7 +677,7 @@ print("Model saved into file:", MODEL_OUTPUT_PATH, HR)
 # %%
 print("Load dataset to test")
 test_dataset = StorkesDataset(files, "test")
-test_batchs = DataLoader(test_dataset, batch_size=128, shuffle=True)
+test_batchs = DataLoader(test_dataset, batch_size=BATCH_SIZE)
 test_x, y_true = next(iter(test_batchs))
 print(test_x.shape, y_true.shape)
 
@@ -706,7 +728,6 @@ def save_result_image(
 
 # %%
 GRID_SIZE = ROWS * COLS
-FIG_OUTPUT_DIR = 'figures'
 
 os.makedirs(FIG_OUTPUT_DIR, exist_ok=True)
 
