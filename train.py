@@ -79,6 +79,17 @@ else:
 print('device:', device, HR)
 
 
+# %%
+# Helper functions
+def makedirs(path: str) -> None:
+    if len(path) == 0:
+        return None
+    dirpath = os.path.dirname(path)
+    if dirpath == '':
+        dirpath = path
+    os.makedirs(dirpath, exist_ok=True)
+
+
 # %% [markdown]
 # ## Prepare to collect dataset
 
@@ -582,7 +593,9 @@ def save_plot(logs: dict, filename: str, **kwargs):
     ax.set_ylabel('loss')
     ax.set_title("loss/epoch")
     ax.legend()
-    plt.savefig(filename, **kwargs)
+    makedirs(filename)
+    fig.savefig(filename, **kwargs)
+    plt.close(fig)
 
 
 # %%
@@ -721,6 +734,7 @@ def save_result_image(
                 strokes, size=(256, 256), ps=5, get_final=True))
             ax.axis('off')
     # plt.show()
+    makedirs(filename)
     f.savefig(filename)
     plt.close(f)
     print("Save result figure:", filename)
@@ -728,8 +742,6 @@ def save_result_image(
 
 # %%
 GRID_SIZE = ROWS * COLS
-
-os.makedirs(FIG_OUTPUT_DIR, exist_ok=True)
 
 n_pages = min(10, len(train_batchs))
 
