@@ -18,6 +18,7 @@ from tqdm import tqdm, tqdm_notebook
 import os
 import re
 import math
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
@@ -54,10 +55,17 @@ EPOCH_RUNS = 50
 BATCH_SIZE = 8192
 LEARNING_RATE = 1e-3
 
-# - Logging
+# - Load model
 PREVIOUS_MODEL_STATE = None
 MODEL_OUTPUT_NAME = f'model_{MAX_STROKES_LEN}_strokes.pt'
+
+# - Logging
+LOG_JSON_PATH = "log.json"
 FIG_OUTPUT_DIR = 'figures'
+LOSS_PLOT_PATH = "plot_train.png"
+LOG_SAVE_INTERVAL: int = 1
+PLOT_SAVE_INTERVAL: int = 2
+MODEL_SAVE_INTERVAL: int = 5
 
 
 # %%
@@ -165,16 +173,20 @@ def load_datasets(files: list,
                   max_row: int = 0) -> tuple:
     xs = []
     ys = []
-    for file in tqdm(files):
+    bar = tqdm(total=len(files))
+    for file in files:
+        basename = filename_to_label(file)
+        bar.set_description(f"Load... {str(basename):15s}")
         packed = np.load(file, encoding='latin1', allow_pickle=True)
         pack = packed[is_for]
         rows = len(pack) if max_row == 0 else max_row
         x_data = np_reshape_sequence(pack[:rows])
         xs.append(x_data)
-        y_label = filename_to_label(file)
+        y_label = basename
         y_class = word_encoder.transform([y_label])[0]
         y_class_reshape = [y_class for _ in range(len(x_data))]
         ys.append(y_class_reshape)
+    bar.close()
     return (np.array(xs), np.array(ys))
 
 
@@ -464,9 +476,6 @@ class StrokeRNN(nn.Module):
 
 # %% [markdown]
 # ### Load previous trained model
-# %%
-# Use trained model if exists
-USE_PREVIOUS_MODEL = False
 
 # %%
 model = StrokeRNN(out_classes=OUT_CLASSES, hidden_state=(
@@ -476,9 +485,9 @@ model = StrokeRNN(out_classes=OUT_CLASSES, hidden_state=(
 print("Model Network:")
 print(model, HR)
 
-if USE_PREVIOUS_MODEL:
+if PREVIOUS_MODEL_STATE:
     print("Use trained model")
-    trained_model = torch.load('model_trained_1.state.pt')
+    trained_model = torch.load(PREVIOUS_MODEL_STATE)
     model.load_state_dict(trained_model)
 else:
     print("Train model from scratch")
@@ -491,6 +500,8 @@ else:
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(
+    optimizer, T_max=50, eta_min=1e-6)
 
 # %%
 
@@ -577,13 +588,30 @@ def run_batch(
 
 
 # %%
-logs = {
+EMPTY_LOGS = {
     "epoch": 0,
     "train_loss": [],
     "train_acc": [],
     "valid_loss": [],
     "valid_acc": [],
 }
+
+# %%
+# Load log json and validate
+try:
+    keys = set(EMPTY_LOGS.keys())
+    with open(LOG_JSON_PATH, mode='r', encoding='utf-8') as fp:
+        logs = json.load(fp=fp)
+
+    loaded_keys = set(logs.keys())
+    if len(keys - loaded_keys) > 0:
+        raise Exception("Invalid log json format")
+except Exception as err:
+    print(err)
+    print("Start logging from empty")
+    logs = dict(EMPTY_LOGS)
+
+print(HR)
 
 # %%
 
@@ -604,10 +632,13 @@ def save_plot(logs: dict, filename: str, **kwargs):
 
 # %%
 print("epochs =", EPOCH_RUNS)
+PREV_EPOCHS = logs["epoch"] or 0
 
 model.to(device)
 
-for epoch in range(EPOCH_RUNS):
+for epoch_idx in range(EPOCH_RUNS):
+    epoch = 1 + PREV_EPOCHS + epoch_idx
+
     bar = tqdm(total=len(train_batchs)+len(valid_batchs), leave=True)
 
     def when_train_batch_end(_, loss, acc):
@@ -645,27 +676,35 @@ for epoch in range(EPOCH_RUNS):
         cb_batch_end=when_valid_batch_end,
         device=device,
     )
+    bar.close()
+
     logs["valid_loss"].append(valid_loss)
     logs["valid_acc"].append(valid_acc)
 
     logs["epoch"] = epoch
+
     print(f'epoch={epoch} | '
           f'train/valid loss={train_loss:8.4f}/{valid_loss:8.4f} | '
           f'train/valid acc={100*train_acc:4.2f}%/{100*valid_acc:4.2f}%')
-    bar.close()
 
-    # Save plot for every 10 epochs
-    if epoch % 2 == 0:
-        save_plot(logs, "plot_train.png")
+
+    # Save log
+    if epoch % (LOG_SAVE_INTERVAL or 1) == 0:
+        with open(LOG_JSON_PATH, 'w', encoding='utf-8') as fp:
+            json.dumps(logs, fp=fp, ensure_ascii=True, indent=2)
+
+    # Save plot
+    if epoch % (PLOT_SAVE_INTERVAL or 1) == 0:
+        save_plot(logs, LOSS_PLOT_PATH)
 
     # Save model state dict
-    if epoch % 5 == 0:
-        torch.save(model.state_dict(), f'model_trained_{epoch}.state.pt')
+    if epoch % (MODEL_SAVE_INTERVAL or 1) == 0:
+        torch.save(model.state_dict(), f'{MODEL_OUTPUT_NAME}_{epoch}.pt')
 
 
 # %%
 print("Train terminated.")
-save_plot(logs, "plot_train.png")
+save_plot(logs, LOSS_PLOT_PATH)
 
 
 # %%
@@ -678,8 +717,8 @@ save_plot(logs, "plot_train.png")
 # ### Save model
 
 # %%
-MODEL_OUTPUT_PATH = 'model_trained.pt'
-torch.save(model, MODEL_OUTPUT_PATH)
+MODEL_OUTPUT_PATH = f'{MODEL_OUTPUT_NAME}.pt'
+torch.save(model.state_dict(), MODEL_OUTPUT_PATH)
 print("Model saved into file:", MODEL_OUTPUT_PATH, HR)
 
 # %%
@@ -804,7 +843,7 @@ print(HR)
 # %%
 
 acc = accuracy_score(test_y_trues, test_y_preds)
-print("accuracy score:", f"{acc*100:6f}%")
+print("accuracy score:", f"{acc*100:8.6f}%")
 
 # %%
 
