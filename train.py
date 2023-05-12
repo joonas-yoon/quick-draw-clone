@@ -710,7 +710,7 @@ for epoch_idx in range(EPOCH_RUNS):
     # Save log
     if epoch % (LOG_SAVE_INTERVAL or 1) == 0:
         with open(LOG_JSON_PATH, 'w', encoding='utf-8') as fp:
-            json.dumps(logs, fp=fp, ensure_ascii=True, indent=2)
+            json.dump(logs, fp=fp, ensure_ascii=True, indent=2)
 
     # Save plot
     if epoch % (PLOT_SAVE_INTERVAL or 1) == 0:
