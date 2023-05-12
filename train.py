@@ -543,14 +543,13 @@ def run_batch(
     criterion,
     optimizer,
     is_train: bool,
-    cb_batch_end: Optional[Callable[[int, float], None]],
+    cb_batch_end: Optional[Callable[[int, float, float], None]],
     device: str = 'cpu',
-) -> list:
+) -> tuple:
+    losses = []
+    accs = []
     with SyncStream():
-        total_losses = []
         for batch_idx, (x, y) in enumerate(batchs):
-            losses = []
-
             batch_x = torch.as_tensor(x).type(torch.FloatTensor).to(device)
             batch_y = torch.as_tensor(y).type(torch.LongTensor).to(device)
 
@@ -565,11 +564,14 @@ def run_batch(
             _loss = loss.item()
             losses.append(_loss)
 
-            if cb_batch_end != None:
-                cb_batch_end(batch_idx, np.mean(losses))
+            y_pred = torch.argmax(log_probs, dim=1)
+            acc = accuracy_score(y_pred.cpu(), batch_y.cpu())
+            accs.append(acc)
 
-        total_losses.append(np.mean(losses))
-    return total_losses
+            if cb_batch_end != None:
+                cb_batch_end(batch_idx, _loss, acc)
+
+    return np.mean(losses), np.mean(accs)
 
 # %%
 
@@ -578,7 +580,9 @@ def run_batch(
 logs = {
     "epoch": 0,
     "train_loss": [],
+    "train_acc": [],
     "valid_loss": [],
+    "valid_acc": [],
 }
 
 # %%
@@ -606,19 +610,19 @@ model.to(device)
 for epoch in range(EPOCH_RUNS):
     bar = tqdm(total=len(train_batchs)+len(valid_batchs), leave=True)
 
-    def when_train_batch_end(_, loss):
+    def when_train_batch_end(_, loss, acc):
         tqdm._instances.clear()
-        bar.set_description(f'[train] loss={loss:8.6f}')
+        bar.set_description(f'[train] loss={loss:8.6f} acc={acc*100:4.2}%')
         bar.update(1)
 
-    def when_valid_batch_end(_, loss):
+    def when_valid_batch_end(_, loss, acc):
         tqdm._instances.clear()
-        bar.set_description(f'[valid] loss={loss:8.6f}')
+        bar.set_description(f'[valid] loss={loss:8.6f} acc={acc*100:4.2}%')
         bar.update(1)
 
     # Train loop
     model.train()
-    train_loss = run_batch(
+    train_loss, train_acc = run_batch(
         model=model,
         batchs=train_batchs,
         criterion=criterion,
@@ -627,11 +631,12 @@ for epoch in range(EPOCH_RUNS):
         cb_batch_end=when_train_batch_end,
         device=device,
     )
-    logs["train_loss"].append(np.mean(train_loss))
+    logs["train_loss"].append(train_loss)
+    logs["train_acc"].append(train_acc)
 
     # Valid loop
     model.eval()
-    valid_loss = run_batch(
+    valid_loss, valid_acc = run_batch(
         model=model,
         batchs=valid_batchs,
         criterion=criterion,
@@ -640,11 +645,13 @@ for epoch in range(EPOCH_RUNS):
         cb_batch_end=when_valid_batch_end,
         device=device,
     )
-    logs["valid_loss"].append(np.mean(valid_loss))
+    logs["valid_loss"].append(valid_loss)
+    logs["valid_acc"].append(valid_acc)
 
-    logs["epoch"] = epoch + int(logs["epoch"] or 0)
-    train_loss, valid_loss = logs["train_loss"][-1], logs["valid_loss"][-1]
-    print(f'epoch={epoch}, train/valid loss={train_loss:8.4f}/{valid_loss:8.4f}')
+    logs["epoch"] = epoch
+    print(f'epoch={epoch} | '
+          f'train/valid loss={train_loss:8.4f}/{valid_loss:8.4f} | '
+          f'train/valid acc={100*train_acc:4.2f}%/{100*valid_acc:4.2f}%')
     bar.close()
 
     # Save plot for every 10 epochs
