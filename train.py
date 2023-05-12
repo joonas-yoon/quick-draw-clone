@@ -25,6 +25,8 @@ from utils import (
     get_device_name, get_filename, makedirs, reconstruct_to_images, reconstruct_to_gif
 )
 
+from args import args as config
+
 from glob import glob
 import gc
 gc.enable()
@@ -39,28 +41,29 @@ HR = "\n" + ("-" * 30) + "\n"
 # %%
 # Options
 # - CUDA
-CUDA_GPU_ID = 3
+CUDA_GPU_ID = int(config.cuda)
 
 # - Dataset
-DATASET_DIR = 'dataset/sketches/sketches'
-MAX_STROKES_LEN = 256
-TRAIN_SAMPLES_PER_CLASS = 5000
-VALID_SAMPLES_PER_CLASS = 100
-OUT_CLASSES = 345
+DATASET_DIR = config.dataset
+MAX_STROKES_LEN = int(config.n_strokes)
+TRAIN_SAMPLES_PER_CLASS = int(config.train_samples)
+VALID_SAMPLES_PER_CLASS = int(config.valid_samples)
+OUT_CLASSES = int(config.classes)
 
 # - Training
-EPOCH_RUNS = 50
-BATCH_SIZE = 8192
-LEARNING_RATE = 2*1e-3
+EPOCH_RUNS = int(config.epochs)
+BATCH_SIZE = int(config.batch_size)
+LEARNING_RATE = float(config.lr)
+USE_BATCH_NORM = bool(config.batch_norm)
 
 # - Load model
-PREVIOUS_MODEL_STATE = None
+PREVIOUS_MODEL_STATE = config.model_state
 MODEL_OUTPUT_NAME = f'model_{MAX_STROKES_LEN}_strokes'
 
 # - Logging
-LOG_JSON_PATH = "log.256.json"
-FIG_OUTPUT_DIR = 'figures.256'
-LOSS_PLOT_PATH = "plot.256.png"
+LOG_JSON_PATH = config.logs
+FIG_OUTPUT_DIR = config.save_figures
+PLOT_PATH = os.path.join(FIG_OUTPUT_DIR, "plot.png")
 LOG_SAVE_INTERVAL: int = 1
 PLOT_SAVE_INTERVAL: int = 2
 MODEL_SAVE_INTERVAL: int = 5
@@ -222,7 +225,9 @@ print(HR)
 # ## Load model
 
 # %%
-model = SimpleLSTM(
+_MODEL = SimpleLSTMBn if USE_BATCH_NORM else SimpleLSTM
+
+model = _MODEL(
     strokes=MAX_STROKES_LEN,
     out_classes=OUT_CLASSES,
     hidden_state=(
@@ -430,7 +435,7 @@ for epoch_idx in range(EPOCH_RUNS):
 
     # Save plot
     if epoch % (PLOT_SAVE_INTERVAL or 1) == 0:
-        save_plot(logs, LOSS_PLOT_PATH)
+        save_plot(logs, PLOT_PATH)
 
     # Save model state dict
     if epoch % (MODEL_SAVE_INTERVAL or 1) == 0:
@@ -444,7 +449,7 @@ for epoch_idx in range(EPOCH_RUNS):
 
 # %%
 print("Train terminated.")
-save_plot(logs, LOSS_PLOT_PATH)
+save_plot(logs, PLOT_PATH)
 
 
 # %%
