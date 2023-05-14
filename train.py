@@ -250,13 +250,13 @@ else:
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='min', factor=0.8, patience=3, threshold=1e-3)
+    optimizer, mode='min', factor=0.8, patience=3, threshold=1e-2)
 
 # %%
 
 
 # %%
-early_stopper = EarlyStopper(patience=10)
+early_stopper = EarlyStopper(patience=10, threshold=1e-3)
 
 
 # %% [markdown]
