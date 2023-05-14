@@ -58,7 +58,7 @@ USE_BATCH_NORM = bool(config.batch_norm)
 
 # - Load model
 PREVIOUS_MODEL_STATE = config.model_state
-MODEL_OUTPUT_NAME = f'model_{MAX_STROKES_LEN}_strokes'
+MODEL_OUTPUT_NAME = config.model_name or f'model_{MAX_STROKES_LEN}'
 
 # - Logging
 LOG_JSON_PATH = config.logs
@@ -138,6 +138,7 @@ train_dataset = StrokesDataset(
     "train",
     max_row=TRAIN_SAMPLES_PER_CLASS,
     strokes=MAX_STROKES_LEN,
+    # storke_normalize=True,
     y_transform=word_encoder)
 
 # %%
@@ -152,6 +153,7 @@ valid_dataset = StrokesDataset(
     "valid",
     max_row=VALID_SAMPLES_PER_CLASS,
     strokes=MAX_STROKES_LEN,
+    # storke_normalize=True,
     y_transform=word_encoder)
 valid_x, valid_y = valid_dataset[:]
 print(valid_x.shape, valid_y.shape, HR)
@@ -204,7 +206,7 @@ reconstruct_to_images(train_x[7], size=(256, 256), get_final=True)
 
 # %%
 print(word_encoder.classes_[train_y[7]],
-      "(Coloring storkes by time passed (red->blue->green))")
+      "(Coloring strokes by time passed (red->blue->green))")
 reconstruct_to_images(train_x[7], size=(
     256, 256), get_final=True, ps=6, order_color=True)
 
@@ -225,15 +227,10 @@ print(HR)
 # ## Load model
 
 # %%
-_MODEL = SimpleLSTMBn if USE_BATCH_NORM else SimpleLSTM
-
-model = _MODEL(
+model = SimpleLSTM(
     strokes=MAX_STROKES_LEN,
     out_classes=OUT_CLASSES,
-    hidden_state=(
-        torch.zeros(2, MAX_STROKES_LEN).to(device),
-        torch.zeros(2, MAX_STROKES_LEN).to(device),
-    )
+    device=device,
 )
 print("Model Network:")
 print(model, HR)
@@ -253,13 +250,13 @@ else:
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='min', factor=0.8, patience=5, threshold=1e-3)
+    optimizer, mode='min', factor=0.8, patience=3, threshold=1e-3)
 
 # %%
 
 
 # %%
-early_stopper = EarlyStopper(patience=6)
+early_stopper = EarlyStopper(patience=10)
 
 
 # %% [markdown]
@@ -281,8 +278,8 @@ class SyncStream():
     def __exit__(self, type, value, traceback):
         pass
 
-# %%
 
+# %%
 
 def run_batch(
     model,
@@ -309,6 +306,18 @@ def run_batch(
                 optimizer.step()
 
             _loss = loss.item()
+
+            if np.isnan(_loss):
+                print(x)
+                print(x.shape)
+                print(batch_x)
+                print(batch_x.shape)
+                print(batch_y)
+                print(batch_y.shape)
+                print(loss)
+                print(log_probs)
+                exit(0)
+
             losses.append(_loss)
 
             y_pred = torch.argmax(log_probs, dim=1)
@@ -381,12 +390,16 @@ for epoch_idx in range(EPOCH_RUNS):
 
     def when_train_batch_end(_, loss, acc):
         tqdm._instances.clear()
-        bar.set_description(f'[train] loss={loss:8.6f} acc={acc:8.6f}')
+        bar.set_description(f'[train] loss={loss:8.6f} | '
+                            f'acc={acc:8.6f} | '
+                            f'lr={lr:8.6f}')
         bar.update(1)
 
     def when_valid_batch_end(_, loss, acc):
         tqdm._instances.clear()
-        bar.set_description(f'[valid] loss={loss:8.6f} acc={acc:8.6f}')
+        bar.set_description(f'[valid] loss={loss:8.6f} | '
+                            f'acc={acc:8.6f} | '
+                            f'lr={lr:8.6f}')
         bar.update(1)
 
     # Train loop
@@ -526,7 +539,7 @@ def save_result_image(
 
             ax.set_title(f"Guess: {guess}\nAnswer: {answer}")
             ax.imshow(reconstruct_to_images(
-                strokes, size=(256, 256), ps=5, get_final=True))
+                strokes, size=(512, 512), ps=5, get_final=True, order_color=True))
             ax.axis('off')
     # plt.show()
     makedirs(filename)

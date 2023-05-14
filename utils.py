@@ -44,17 +44,23 @@ def rgb_to_hex(rgb: tuple, order: list = [0, 1, 2]) -> str:
     return f"#{r:02x}{g:02x}{b:02x}"
 
 
-def get_image_resolution(strokes: list) -> tuple:
-    inf = 1e8
-    minx, maxx, miny, maxy = inf, -inf, inf, -inf
-    x, y = 0, 0
-    for stroke in strokes:
-        dx, dy, _ = stroke
-        x += dx
-        y += dy
-        minx, maxx = min(x, minx), max(x, maxx)
-        miny, maxy = min(y, miny), max(y, maxy)
-    return (maxx - minx, maxy - miny)
+def get_image_box(strokes: np.array) -> tuple:
+    points = []
+    for i, s in enumerate(strokes):
+        dx, dy, _ = s
+        if i == 0:
+            cx, cy = 0, 0
+        cx += dx
+        cy += dy
+        points += [(cx, cy, _)]
+    points = np.array(points)
+    xs, ys = points[:, 0], points[:, 1]
+    return min(xs), max(xs), min(ys), max(ys)
+
+
+def get_resolution(strokes: np.array) -> tuple:
+    left, right, top, bottom = get_image_box(strokes)
+    return right - left, bottom - top
 
 
 def reconstruct_to_images(
@@ -65,36 +71,36 @@ def reconstruct_to_images(
         order_color=False
 ) -> Union[List[Image.Image], Image.Image]:
     rdp_lines = np.array(rdp_lines)
-    I_WIDTH, I_HEIGHT = get_image_resolution(rdp_lines)
-    I_SHAPE = max(I_WIDTH, I_HEIGHT) * 2.5  # padding
-    O_WIDTH, O_HEIGHT = size
-    fx, fy = O_WIDTH / I_SHAPE, O_HEIGHT / I_SHAPE
-    START_X, START_Y = O_WIDTH // 2, O_HEIGHT // 2
+
+    LEFT, RIGHT, TOP, BOTTOM = get_image_box(rdp_lines)
+    I_WIDTH, I_HEIGHT = int(RIGHT - LEFT), int(BOTTOM - TOP)
     LINE_WIDTH = int(ps)
-#     print(I_WIDTH, I_HEIGHT, O_WIDTH, O_HEIGHT, fx, fy, START_X, START_Y)
-    img = Image.new("RGB", (O_WIDTH, O_HEIGHT), "white")
-    cx, cy = (START_X, START_Y)
+
+    img = Image.new("RGB", (I_WIDTH * 2, I_HEIGHT * 2), "white")
+    cx, cy = (I_WIDTH, I_HEIGHT)
     images = []
     n = len(rdp_lines)
     for i in range(n):
         dx, dy, line_type = rdp_lines[i]
-        nx, ny = cx+dx*fx, cy+dy*fy
-        is_end = (i-1 >= 0) and (rdp_lines[i-1][2] == 1)
+        nx, ny = cx + dx, cy + dy
+        is_end = (i-1 >= 0) and (rdp_lines[i-1][2] != 0)
         if not is_end:
             shape = [(cx, cy), (nx, ny)]
             if order_color:
-                color = rgb_to_hex(weight_to_rgb(
-                    i / n), order=[0, 2, 1])  # r->b->g
+                color = rgb_to_hex(
+                    weight_to_rgb(i / n),
+                    order=[0, 2, 1]
+                )  # r->b->g
             else:
                 color = "black"
 
             draw = ImageDraw.Draw(img)
             draw.line(shape, fill=color, width=LINE_WIDTH)
             if not get_final:
-                images.append(img.copy())
+                images.append(img.resize(size).copy())
         cx, cy = nx, ny
     if get_final:
-        return img.copy()
+        return img.resize(size).copy()
     return images
 
 
