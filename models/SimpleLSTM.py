@@ -33,7 +33,10 @@ class BaseLSTMModel(nn.Module):
         self.fc = nn.Sequential(
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.1),
-            nn.Linear(in_features=strokes, out_features=out_classes),
+            nn.Linear(in_features=strokes, out_features=256),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.1),
+            nn.Linear(in_features=256, out_features=out_classes),
         )
 
         self.hidden_state = (
