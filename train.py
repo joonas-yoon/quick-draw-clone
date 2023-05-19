@@ -249,14 +249,16 @@ else:
 # %%
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='min', factor=0.8, patience=3, threshold=1e-2)
+# scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+#     optimizer, mode='min', factor=0.8, patience=3, threshold=1e-2)
+scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+      optimizer, T_0=10, T_mult=1, eta_min=1e-5)
 
 # %%
 
 
 # %%
-early_stopper = EarlyStopper(patience=10, threshold=1e-3)
+early_stopper = EarlyStopper(patience=10, threshold=1e-2)
 
 
 # %% [markdown]
@@ -439,7 +441,7 @@ for epoch_idx in range(EPOCH_RUNS):
           f'train/valid loss={train_loss:6.4f}/{valid_loss:6.4f} | '
           f'train/valid acc={100*train_acc:6.3f}%/{100*valid_acc:6.3f}%')
 
-    scheduler.step(train_loss)
+    scheduler.step()
 
     # Save log
     if epoch % (LOG_SAVE_INTERVAL or 1) == 0:
