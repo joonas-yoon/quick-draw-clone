@@ -329,7 +329,7 @@ def run_batch(
             if cb_batch_end != None:
                 cb_batch_end(batch_idx, _loss, acc)
 
-    return np.mean(losses), np.mean(accs)
+    return losses, accs
 
 # %%
 
@@ -339,8 +339,10 @@ EMPTY_LOGS = {
     "epoch": 0,
     "train_loss": [],
     "train_acc": [],
+    "train_acc_top_5": [],
     "valid_loss": [],
     "valid_acc": [],
+    "valid_acc_top_5": [],
     "lr": [],
 }
 
@@ -415,8 +417,13 @@ for epoch_idx in range(EPOCH_RUNS):
         cb_batch_end=when_train_batch_end,
         device=device,
     )
+    train_loss = np.mean(train_loss)
+    train_acc_top_5 = np.mean(sorted(train_acc)[-5:])
+    train_acc = np.mean(train_acc)
+
     logs["train_loss"].append(train_loss)
     logs["train_acc"].append(train_acc)
+    logs["train_acc_top_5"].append(train_acc_top_5)
 
     # Valid loop
     model.eval()
@@ -429,17 +436,23 @@ for epoch_idx in range(EPOCH_RUNS):
         cb_batch_end=when_valid_batch_end,
         device=device,
     )
+    valid_loss = np.mean(valid_loss)
+    valid_acc_top_5 = np.mean(sorted(valid_acc)[-5:])
+    valid_acc = np.mean(valid_acc)
+
     bar.close()
 
     logs["valid_loss"].append(valid_loss)
     logs["valid_acc"].append(valid_acc)
+    logs["valid_acc_top_5"].append(valid_acc_top_5)
     logs["lr"].append(lr)
 
     logs["epoch"] = epoch
 
     print(f'epoch={epoch} | '
           f'train/valid loss={train_loss:6.4f}/{valid_loss:6.4f} | '
-          f'train/valid acc={100*train_acc:6.3f}%/{100*valid_acc:6.3f}%')
+          f'train/valid acc={100*train_acc:6.3f}%/{100*valid_acc:6.3f}% | '
+          f'train/valid acc (top 5)={100*train_acc_top_5:6.3f}%/{100*valid_acc_top_5:6.3f}%')
 
     scheduler.step()
 
