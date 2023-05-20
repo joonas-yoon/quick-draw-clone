@@ -129,7 +129,9 @@ print('target words for output:', len(word_encoder.classes_), '=>',
 # %%
 TRAIN_FILES = sorted(files)
 print("Files used in dataset", f"({len(TRAIN_FILES)}):")
-print('\n'.join(TRAIN_FILES), HR)
+print('\n'.join(TRAIN_FILES[:3]))
+print('...')
+print('\n'.join(TRAIN_FILES[-3:]), HR)
 
 # %%
 print("Collect dataset to train")
@@ -252,7 +254,7 @@ optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 # scheduler = optim.lr_scheduler.ReduceLROnPlateau(
 #     optimizer, mode='min', factor=0.8, patience=3, threshold=1e-2)
 scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-      optimizer, T_0=10, T_mult=1, eta_min=1e-5)
+    optimizer, T_0=10, T_mult=1, eta_min=1e-5)
 
 # %%
 
