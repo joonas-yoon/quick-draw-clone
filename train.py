@@ -2,6 +2,8 @@
 # ## Importings
 
 # %%
+from PIL import Image as PILImage
+import wandb
 import os
 import json
 import numpy as np
@@ -22,7 +24,7 @@ from models.SimpleLSTM import SimpleLSTM, SimpleLSTMBn
 from trainer.callbacks import EarlyStopper
 from trainer.dataloader import StrokesDataset
 from utils import (
-    get_device_name, get_filename, makedirs, reconstruct_to_images, reconstruct_to_gif
+    draw_image_grid, get_device_name, get_filename, makedirs, reconstruct_to_images, reconstruct_to_gif
 )
 
 from args import args as config
@@ -67,6 +69,9 @@ PLOT_PATH = os.path.join(FIG_OUTPUT_DIR, "plot.png")
 LOG_SAVE_INTERVAL: int = 1
 PLOT_SAVE_INTERVAL: int = 2
 MODEL_SAVE_INTERVAL: int = 5
+SHOW_PROGRESS: bool = config.progress_bar
+
+WB_API: str = config.wandb_api or os.environ['WANDB_API_KEY']
 
 # %%
 # Set environment before importing torch
@@ -82,6 +87,20 @@ if torch.cuda.is_available():
     torch.cuda.set_device(device)
 
 print('device:', device, HR)
+
+
+# %%
+wandb.login(key=WB_API)
+
+# start a new wandb run to track this script
+wandb.init(
+    # set the wandb project where this run will be logged
+    project="Quick Draw RNN",
+    tags=["RNN", "LSTM", "Adam", "CosineAnnealingWarmRestarts"],
+
+    # track hyperparameters and run metadata
+    config=vars(config)
+)
 
 
 # %% [markdown]
@@ -199,6 +218,37 @@ valid_x, valid_y = next(iter(valid_batchs))
 
 
 # %%
+ROWS = 6
+COLS = 6
+
+
+def save_result_image(
+    x: list,
+    y_true: list,
+    y_pred: list,
+    output_path: str,
+):
+    N = ROWS * COLS
+    f, axes = draw_image_grid(
+        x[:N], rows=ROWS, cols=COLS, figsize=(20, 20))
+    for i in range(ROWS):
+        for j in range(COLS):
+            ax = axes[i, j]
+            idx = i * COLS + j
+            nameof = word_encoder.classes_
+            guess = nameof[y_pred[idx]]
+            answer = nameof[y_true[idx]]
+            ax.set_title(f"Guess: {guess}\nAnswer: {answer}")
+            ax.axis('off')
+    # plt.show()
+    makedirs(output_path)
+    f.set_dpi(75)
+    f.savefig(output_path)
+    plt.close(f)
+    print("Save result figure:", output_path)
+
+
+# %%
 print("Image reconstructing test:")
 
 
@@ -220,6 +270,14 @@ reconstruct_to_gif(train_x[7], filename='sample_color.gif',
 
 # %% [markdown]
 # ![](sample.gif) ![](sample_color.gif)
+
+# %%
+save_result_image(
+    x=train_x,
+    y_true=train_y,
+    y_pred=train_y,
+    output_path="sample_image_batch.png",
+)
 
 # %%
 print(HR)
@@ -284,6 +342,8 @@ class SyncStream():
 
 
 # %%
+TEMP_BATCH_FILE = "_batch_image.png"
+
 
 def run_batch(
     model,
@@ -292,14 +352,17 @@ def run_batch(
     optimizer,
     is_train: bool,
     cb_batch_end: Optional[Callable[[int, float, float], None]],
+    logging: bool = False,
     device: str = 'cpu',
 ) -> tuple:
     losses = []
     accs = []
     with SyncStream():
         for batch_idx, (x, y) in enumerate(batchs):
-            batch_x = torch.as_tensor(x).type(torch.FloatTensor).to(device)
-            batch_y = torch.as_tensor(y).type(torch.LongTensor).to(device)
+            batch_x: torch.Tensor = torch.as_tensor(
+                x).type(torch.FloatTensor).to(device)
+            batch_y: torch.Tensor = torch.as_tensor(
+                y).type(torch.LongTensor).to(device)
 
             log_probs = model(batch_x)
             loss = criterion(log_probs, batch_y)
@@ -311,25 +374,29 @@ def run_batch(
 
             _loss = loss.item()
 
-            if np.isnan(_loss):
-                print(x)
-                print(x.shape)
-                print(batch_x)
-                print(batch_x.shape)
-                print(batch_y)
-                print(batch_y.shape)
-                print(loss)
-                print(log_probs)
-                exit(0)
-
             losses.append(_loss)
 
-            y_pred = torch.argmax(log_probs, dim=1)
-            acc = accuracy_score(y_pred.cpu(), batch_y.cpu())
+            batch_y = batch_y.cpu()
+            y_pred = torch.argmax(log_probs, dim=1).cpu()
+            acc = accuracy_score(y_pred, batch_y)
             accs.append(acc)
 
             if cb_batch_end != None:
                 cb_batch_end(batch_idx, _loss, acc)
+
+            if batch_idx == 0:
+                bx: np.ndarray = batch_x.cpu().numpy()
+                f, axes = draw_image_grid(bx, ROWS, COLS, figsize=(25, 25))
+                axes = axes.flatten()
+                for i in range(ROWS * COLS):
+                    ax = axes[i]
+                    words = word_encoder.classes_
+                    ans = words[batch_y[i]]
+                    pred = words[y_pred[i]]
+                    ax.set_title(f"Answer:{ans}\nPredict:{pred}")
+                img = wandb.Image(f)
+                wandb.log({'batch_image': img})
+                plt.close(f)
 
     return losses, accs
 
@@ -392,9 +459,12 @@ for epoch_idx in range(EPOCH_RUNS):
     epoch = 1 + PREV_EPOCHS + epoch_idx
     lr = optimizer.param_groups[0]['lr']
 
-    bar = tqdm(total=len(train_batchs)+len(valid_batchs), leave=True)
+    if SHOW_PROGRESS:
+        bar = tqdm(total=len(train_batchs)+len(valid_batchs), leave=True)
 
     def when_train_batch_end(_, loss, acc):
+        if not SHOW_PROGRESS:
+            return
         tqdm._instances.clear()
         bar.set_description(f'[train] loss={loss:8.6f} | '
                             f'acc={acc:8.6f} | '
@@ -402,6 +472,8 @@ for epoch_idx in range(EPOCH_RUNS):
         bar.update(1)
 
     def when_valid_batch_end(_, loss, acc):
+        if not SHOW_PROGRESS:
+            return
         tqdm._instances.clear()
         bar.set_description(f'[valid] loss={loss:8.6f} | '
                             f'acc={acc:8.6f} | '
@@ -417,6 +489,7 @@ for epoch_idx in range(EPOCH_RUNS):
         optimizer=optimizer,
         is_train=True,
         cb_batch_end=when_train_batch_end,
+        logging=True,
         device=device,
     )
     train_loss = np.mean(train_loss)
@@ -442,7 +515,8 @@ for epoch_idx in range(EPOCH_RUNS):
     valid_acc_top_5 = np.mean(sorted(valid_acc)[-5:])
     valid_acc = np.mean(valid_acc)
 
-    bar.close()
+    if SHOW_PROGRESS:
+        bar.close()
 
     logs["valid_loss"].append(valid_loss)
     logs["valid_acc"].append(valid_acc)
@@ -455,6 +529,16 @@ for epoch_idx in range(EPOCH_RUNS):
           f'train/valid loss={train_loss:6.4f}/{valid_loss:6.4f} | '
           f'train/valid acc={100*train_acc:6.3f}%/{100*valid_acc:6.3f}% | '
           f'train/valid acc (top 5)={100*train_acc_top_5:6.3f}%/{100*valid_acc_top_5:6.3f}%')
+
+    wandb.log({
+        "lr": lr,
+        "train_loss": train_loss,
+        "train_acc": train_acc,
+        "train_acc_top_5": train_acc_top_5,
+        "valid_loss": valid_loss,
+        "valid_acc": valid_acc,
+        "valid_acc_top_5": valid_acc_top_5,
+    })
 
     scheduler.step()
 
@@ -480,6 +564,7 @@ for epoch_idx in range(EPOCH_RUNS):
 # %%
 print("Train terminated.")
 save_plot(logs, PLOT_PATH)
+wandb.alert(title='Train terminated', text='Check it out')
 
 
 # %%
@@ -533,41 +618,8 @@ test_batch_y = y_true.detach().cpu().numpy()
 log_probs = model(test_batch_x)
 test_y_pred = np.argmax(log_probs.detach().cpu(), axis=1)
 
-# %%
-ROWS = 6
-COLS = 6
-
-
-def save_result_image(
-    x: list,
-    y_true: list,
-    y_pred: list,
-    filename: str,
-):
-    f, axes = plt.subplots(ROWS, COLS, figsize=(30, 30))
-    for i in range(ROWS):
-        for j in range(COLS):
-            ax = axes[i, j]
-            idx = i * COLS + j
-            nameof = word_encoder.classes_
-            guess = nameof[y_pred[idx]]
-            answer = nameof[y_true[idx]]
-            strokes = x[idx].detach().cpu().numpy().astype(int)
-
-            ax.set_title(f"Guess: {guess}\nAnswer: {answer}")
-            ax.imshow(reconstruct_to_images(
-                strokes, size=(512, 512), ps=5, get_final=True, order_color=True))
-            ax.axis('off')
-    # plt.show()
-    makedirs(filename)
-    f.savefig(filename)
-    plt.close(f)
-    print("Save result figure:", filename)
-
 
 # %%
-GRID_SIZE = ROWS * COLS
-
 n_pages = min(10, len(train_batchs))
 
 for batch_idx, (test_x, y_true) in enumerate(train_batchs):
@@ -581,13 +633,12 @@ for batch_idx, (test_x, y_true) in enumerate(train_batchs):
     y_pred = np.argmax(log_probs.detach().cpu(), axis=1)
 
     filename = f"test_sample_batch_{batch_idx}.png"
-    output_path = os.path.join(FIG_OUTPUT_DIR, filename)
 
     save_result_image(
         x=test_x,
         y_true=y_true,
         y_pred=y_pred,
-        filename=output_path
+        output_path=filename,
     )
 
 print(HR)
@@ -608,7 +659,9 @@ with SyncStream():
     test_y_trues = []
     test_y_preds = []
 
-    for (x, y) in tqdm(test_batchs):
+    batchs = tqdm(test_batchs) if SHOW_PROGRESS else test_batchs
+
+    for (x, y) in batchs:
         batch_x = torch.as_tensor(x).type(torch.FloatTensor).to(device)
 
         log_probs = model(batch_x)

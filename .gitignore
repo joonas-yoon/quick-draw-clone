@@ -164,3 +164,6 @@ dataset/
 *.ndjson
 *.npz
 *.zip
+
+# W and B
+wandb/

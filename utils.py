@@ -1,8 +1,11 @@
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
 import os
 import json
 import torch
 import numpy as np
-from typing import Union, List
+from typing import Tuple, Union, List
 from PIL import Image, ImageDraw
 
 
@@ -113,3 +116,27 @@ def reconstruct_to_gif(rdp_lines,
     images = reconstruct_to_images(
         rdp_lines, size=size, ps=ps, order_color=order_color)
     images[0].save(filename, save_all=True, append_images=images[1:], **kwargs)
+
+
+def draw_image(strokes: np.array, ax):
+    cum_arr = np.column_stack(
+        (np.cumsum(strokes[:, :2], axis=0), strokes[:, 2]))
+    splited = np.split(cum_arr, np.argwhere(cum_arr[:, 2] > 0).flatten()+1)
+    n = len(splited)
+    for i, polygon in enumerate(splited):
+        polygon = polygon[:, 0:2].tolist()
+        color = rgb_to_hex(weight_to_rgb(i / n), order=[0, 2, 1])  # r->b->g
+        if len(polygon) > 0:
+            ax.add_patch(Polygon(polygon, fill=None,
+                         closed=False, color=color))
+    ax.set_xlim(np.percentile(cum_arr[:, 0], [0, 100]))  # min, max
+    ax.set_ylim(np.percentile(cum_arr[:, 1], [100, 0]))  # max, min (fliped)
+
+
+def draw_image_grid(strokes: np.array, rows: int, cols: int, **kwargs) -> Tuple[plt.figure, np.ndarray]:
+    fig, axes = plt.subplots(rows, cols, **kwargs)
+    fig.subplots_adjust(wspace=0.5, hspace=0.5)
+    for strokes, ax in zip(strokes, axes.flatten()):
+        ax.axis('off')
+        draw_image(strokes, ax)
+    return fig, axes

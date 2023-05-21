@@ -22,10 +22,14 @@ parser.add_argument("--logs", action="store",
                     help="path to save logs", default="log.json")
 parser.add_argument("--save-figures", action="store",
                     help="directory name to save figures", default="figures")
+parser.add_argument("--wandb-api", action="store",
+                    help="API token to use wandb, or use environment variable WANDB_API_KEY")
 parser.add_argument("--batch-norm", action="store_true",
                     help="use batch normalization")
 parser.add_argument("--cuda", action="store", type=int,
                     help="cuda number to use", default=0)
+parser.add_argument("--progress-bar", action="store_true",
+                    help="Show progress bar")
 
 args = parser.parse_args()
 
