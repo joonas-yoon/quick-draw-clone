@@ -297,12 +297,13 @@ print(model, HR)
 
 if PREVIOUS_MODEL_STATE:
     print("Use trained model")
-    trained_model = torch.load(PREVIOUS_MODEL_STATE)
+    trained_model = torch.load(
+        PREVIOUS_MODEL_STATE, map_location=torch.device(device))
     model.load_state_dict(trained_model)
 else:
     print("Train model from scratch")
 
-artifact = wandb.Artifact(MODEL_OUTPUT_NAME, type='model')
+# artifact = wandb.Artifact(MODEL_OUTPUT_NAME, type='model')
 
 # %% [markdown]
 # ### Criterion & Optimizer
@@ -598,8 +599,8 @@ for epoch_idx in range(EPOCH_RUNS):
     if epoch % (MODEL_SAVE_INTERVAL or 1) == 0:
         path = f'{MODEL_OUTPUT_NAME}_{epoch}.pt'
         torch.save(model.state_dict(), path)
-        artifact.add_file(path, is_tmp=True)
-        wb_logger.log_artifact(artifact)
+        # artifact.add_file(path, is_tmp=True)
+        # wb_logger.log_artifact(artifact)
 
     # Early Stop
     if early_stopper.check(validation_loss=valid_loss):
