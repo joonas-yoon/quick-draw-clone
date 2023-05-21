@@ -93,7 +93,7 @@ print('device:', device, HR)
 wandb.login(key=WB_API)
 
 # start a new wandb run to track this script
-wandb.init(
+wb_logger = wandb.init(
     # set the wandb project where this run will be logged
     project="Quick Draw RNN",
     tags=["RNN", "LSTM", "Adam", "CosineAnnealingWarmRestarts"],
@@ -302,6 +302,7 @@ if PREVIOUS_MODEL_STATE:
 else:
     print("Train model from scratch")
 
+artifact = wandb.Artifact(MODEL_OUTPUT_NAME, type='model')
 
 # %% [markdown]
 # ### Criterion & Optimizer
@@ -384,7 +385,7 @@ def run_batch(
             if cb_batch_end != None:
                 cb_batch_end(batch_idx, _loss, acc)
 
-            if batch_idx == 0:
+            if logging and (batch_idx == 0):
                 bx: np.ndarray = batch_x.cpu().numpy()
                 f, axes = draw_image_grid(bx, ROWS, COLS, figsize=(25, 25))
                 axes = axes.flatten()
@@ -553,7 +554,10 @@ for epoch_idx in range(EPOCH_RUNS):
 
     # Save model state dict
     if epoch % (MODEL_SAVE_INTERVAL or 1) == 0:
-        torch.save(model.state_dict(), f'{MODEL_OUTPUT_NAME}_{epoch}.pt')
+        path = f'{MODEL_OUTPUT_NAME}_{epoch}.pt'
+        torch.save(model.state_dict(), path)
+        artifact.add_file(path)
+        wb_logger.log_artifact(artifact)
 
     # Early Stop
     if early_stopper.check(validation_loss=valid_loss):
@@ -678,7 +682,7 @@ acc = accuracy_score(test_y_trues, test_y_preds)
 print("accuracy score:", f"{acc*100:8.6f}%")
 
 # %%
-
+wb_logger.finish()
 
 # %%
 
