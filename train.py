@@ -346,6 +346,46 @@ class SyncStream():
 TEMP_BATCH_FILE = "_batch_image.png"
 
 
+def top_probs(probs: np.ndarray, k: int = 5):
+    """ probs is (batch, Y)
+
+    Returns:
+        (batch, 2, Y)
+        which 2 for sorted index, sorted probabilites)
+    """
+    res = []
+    for p in probs:
+        norm = (p - p.min()) / (p.max() - p.min())
+        norm = norm / norm.sum()
+        i = norm.argsort()[-k:]
+        res += [(i, norm[i])]
+    return np.array(res)
+
+
+def draw_image_grid_with_probs(
+        strokes: np.ndarray,
+        y_true: list,
+        y_pred_probs: np.ndarray,
+        k: int
+):
+    probs = top_probs(y_pred_probs, k=k)
+    f, axes = draw_image_grid(strokes, ROWS, COLS, figsize=(25, 25))
+    axes = axes.flatten()
+    for i in range(ROWS * COLS):
+        ax = axes[i]
+        words = word_encoder.classes_
+        ans = words[y_true[i]]
+        pi, pv = probs[i, 0, :], probs[i, 1, :]
+        top3 = [
+            f"{words[int(pi[_])]} ({pv[_]*100:6.3f}%)" for _ in range(3)
+        ]
+        top3 = '\n'.join(top3[::-1])
+        ax.set_title(f"Answer:{ans}\n"
+                     f"- Predict -\n"
+                     f"{top3}")
+    return f, axes
+
+
 def run_batch(
     model,
     batchs,
@@ -360,12 +400,12 @@ def run_batch(
     accs = []
     with SyncStream():
         for batch_idx, (x, y) in enumerate(batchs):
-            batch_x: torch.Tensor = torch.as_tensor(
+            strokes: torch.Tensor = torch.as_tensor(
                 x).type(torch.FloatTensor).to(device)
             batch_y: torch.Tensor = torch.as_tensor(
                 y).type(torch.LongTensor).to(device)
 
-            log_probs = model(batch_x)
+            log_probs: torch.Tensor = model(strokes)
             loss = criterion(log_probs, batch_y)
 
             if is_train:
@@ -385,19 +425,21 @@ def run_batch(
             if cb_batch_end != None:
                 cb_batch_end(batch_idx, _loss, acc)
 
-            if logging and (batch_idx == 0):
-                bx: np.ndarray = batch_x.cpu().numpy()
-                f, axes = draw_image_grid(bx, ROWS, COLS, figsize=(25, 25))
-                axes = axes.flatten()
-                for i in range(ROWS * COLS):
-                    ax = axes[i]
-                    words = word_encoder.classes_
-                    ans = words[batch_y[i]]
-                    pred = words[y_pred[i]]
-                    ax.set_title(f"Answer:{ans}\nPredict:{pred}")
-                img = wandb.Image(f)
-                wandb.log({'batch_image': img})
-                plt.close(f)
+            if logging:
+                wandb.log({
+                    'batch_loss': _loss,
+                    'batch_acc': acc
+                })
+                if batch_idx == 0:
+                    strokes: np.ndarray = strokes.detach().cpu().numpy()
+                    probs = log_probs.detach().cpu().numpy()
+
+                    f, axes = draw_image_grid_with_probs(
+                        strokes, batch_y, probs, k=3
+                    )
+                    img = wandb.Image(f)
+                    wandb.log({'batch_image': img})
+                    plt.close(f)
 
     return losses, accs
 
@@ -556,7 +598,7 @@ for epoch_idx in range(EPOCH_RUNS):
     if epoch % (MODEL_SAVE_INTERVAL or 1) == 0:
         path = f'{MODEL_OUTPUT_NAME}_{epoch}.pt'
         torch.save(model.state_dict(), path)
-        artifact.add_file(path)
+        artifact.add_file(path, is_tmp=True)
         wb_logger.log_artifact(artifact)
 
     # Early Stop
