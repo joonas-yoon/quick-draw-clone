@@ -246,12 +246,15 @@ wandb_logger = WandbLogger(
     log_model=True,
 )
 
-lr_find_callback = LearningRateFinder(
-    min_lr=1e-6, max_lr=0.1, attr_name="lr",
-)
 lr_callback = LearningRateMonitor()
 checkpoint_callback = ModelCheckpoint(monitor="val_acc", mode="max")
 earlystop_callback = EarlyStopping(monitor="val_loss", patience=5)
+
+
+class AutoLearningRateFinder(LearningRateFinder):
+    def on_train_epoch_start(self, trainer, pl_module):
+        if trainer.current_epoch == 0:
+            self.lr_find(trainer, pl_module)
 
 
 class SaveBatchImageCallback(Callback):
@@ -265,9 +268,10 @@ class SaveBatchImageCallback(Callback):
         if batch_idx != 0:
             return
         x, y = batch
+        y_probs = trainer.model(x)
         f, axes = draw_image_grid_with_probs(x.detach().cpu().numpy(),
                                              y.detach().cpu().numpy(),
-                                             outputs,
+                                             y_probs,
                                              y_classes=word_encoder.classes_,
                                              k=5,
                                              rows=6,
@@ -278,13 +282,15 @@ class SaveBatchImageCallback(Callback):
         plt.close(f)
 
 
+lr_find_callback = AutoLearningRateFinder(
+    min_lr=1e-6, max_lr=0.1, attr_name="lr",
+)
 image_preview_callback = SaveBatchImageCallback()
 
 
 # Trainer
 trainer = L.Trainer(
     max_epochs=EPOCH_RUNS,
-    max_time="00:05:00:00",
     use_distributed_sampler=True,
     enable_checkpointing=True,
     enable_model_summary=True,

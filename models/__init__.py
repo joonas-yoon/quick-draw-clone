@@ -79,5 +79,9 @@ class LitLSTM(L.LightningModule):
         self.log_dict({'val_loss': loss, 'val_acc': val_acc})
 
     def configure_optimizers(self):
-        LEARNING_RATE = float(config.lr)
-        return optim.Adam(self.parameters(), lr=LEARNING_RATE)
+        try:
+            lr = self.hparams.learning_rate
+        except AttributeError:
+            lr = float(config.lr)
+        print("model.configure_optimizers.lr =", lr)
+        return optim.Adam(self.parameters(), lr=lr)
