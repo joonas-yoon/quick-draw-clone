@@ -5,7 +5,7 @@ import os
 import json
 import torch
 import numpy as np
-from typing import Tuple, Union, List
+from typing import Any, Tuple, Union, List
 from PIL import Image, ImageDraw
 
 
@@ -140,3 +140,47 @@ def draw_image_grid(strokes: np.array, rows: int, cols: int, **kwargs) -> Tuple[
         ax.axis('off')
         draw_image(strokes, ax)
     return fig, axes
+
+
+def top_probs(probs: torch.Tensor, k: int = 5):
+    """ probs is (batch, Y)
+
+    Returns:
+        (batch, 2, Y)
+        which 2 for sorted index, sorted probabilites)
+    """
+    res = []
+    probs = probs.detach().cpu().numpy()
+    for p in probs:
+        e = np.exp(p)
+        norm = e / np.sum(e)
+        i = norm.argsort()[-k:]
+        res += [(i, norm[i])]
+    return np.array(res)
+
+
+def draw_image_grid_with_probs(
+        strokes: np.ndarray,
+        y_true: list,
+        y_pred_probs: torch.Tensor,
+        y_classes: list,
+        k: int,
+        rows: int = 3,
+        cols: int = 3,
+        **kwargs,
+) -> Tuple[plt.figure, Any]:
+    probs = top_probs(y_pred_probs, k=k)
+    f, axes = draw_image_grid(strokes, rows, cols, **kwargs)
+    axes = axes.flatten()
+    for i in range(rows * cols):
+        ax = axes[i]
+        ans = y_classes[y_true[i]]
+        pi, pv = probs[i, 0, :], probs[i, 1, :]
+        top3 = [
+            f"{y_classes[int(pi[_])]} ({pv[_]*100:6.3f}%)" for _ in range(3)
+        ]
+        top3 = '\n'.join(top3[::-1])
+        ax.set_title(f"Answer:{ans}\n"
+                     f"- Predict -\n"
+                     f"{top3}")
+    return f, axes

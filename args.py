@@ -30,6 +30,8 @@ parser.add_argument("--cuda", action="store", type=int,
                     help="cuda number to use", default=0)
 parser.add_argument("--progress-bar", action="store_true",
                     help="Show progress bar")
+parser.add_argument("--seed", type=int, default=1234,
+                    metavar="S", help="random seed (default: 1234)")
 
 args = parser.parse_args()
 

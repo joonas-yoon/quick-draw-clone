@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from typing import Literal
+from typing import Literal, Tuple
 from sklearn.preprocessing import LabelEncoder
 from tqdm import tqdm
 from torch.utils.data import Dataset
@@ -30,7 +30,7 @@ def load_datasets(files: list,
                   is_for: Literal["train", "valid", "test"],
                   y_transform: LabelEncoder,
                   strokes: int = 128,
-                  max_row: int = 0) -> tuple:
+                  max_row: int = 0) -> Tuple[np.ndarray, np.ndarray]:
     xs = []
     ys = []
     bar = tqdm(total=len(files))
@@ -65,8 +65,8 @@ class StrokesDataset(Dataset):
             strokes=strokes,
             max_row=max_row
         )
-        self.x = x.reshape(-1, strokes, 3)
-        self.y = y.reshape(-1)
+        self.x = x.reshape(-1, strokes, 3).astype(np.float32)
+        self.y = y.reshape(-1).astype(np.int16)
         self._classes = list(set(map(_filename_to_label, files)))
         self._classes_n = len(self._classes)
 
