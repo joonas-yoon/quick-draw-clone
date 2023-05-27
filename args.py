@@ -18,6 +18,8 @@ parser.add_argument("-l", "--lr", action="store", type=float,
 parser.add_argument("-m", "--model-name", action="store", help="model name")
 parser.add_argument("--model-state", action="store",
                     help="model state location to continue")
+parser.add_argument("--checkpoint", action="store",
+                    help="[lightning] model checkpoint")
 parser.add_argument("--logs", action="store",
                     help="path to save logs", default="log.json")
 parser.add_argument("--save-figures", action="store",

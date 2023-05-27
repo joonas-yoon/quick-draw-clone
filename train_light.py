@@ -71,7 +71,7 @@ LEARNING_RATE = float(config.lr)
 USE_BATCH_NORM = bool(config.batch_norm)
 
 # - Load model
-PREVIOUS_MODEL_STATE = config.model_state
+MODEL_CHECKPOINT = config.checkpoint
 MODEL_OUTPUT_NAME = config.model_name or f'model_{MAX_STROKES_LEN}'
 
 # - Logging
@@ -227,14 +227,6 @@ model.save_hyperparameters(config)
 print("Model Network:")
 print(model, HR)
 
-if PREVIOUS_MODEL_STATE:
-    print("Use trained model")
-    trained_model = torch.load(
-        PREVIOUS_MODEL_STATE, map_location=torch.device(device))
-    model.load_state_dict(trained_model)
-else:
-    print("Train model from scratch")
-
 
 # Logger
 wandb_logger = WandbLogger(
@@ -322,7 +314,7 @@ new_lr = lr_finder.suggestion()
 model.hparams.lr = new_lr
 model.configure_optimizers()
 
-trainer.fit(model, datamodule=dm, ckpt_path="model.ckpt")
+trainer.fit(model, datamodule=dm, ckpt_path=MODEL_CHECKPOINT)
 trainer.validate(model, dm, verbose=True)
 
 
