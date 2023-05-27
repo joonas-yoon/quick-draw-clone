@@ -301,25 +301,26 @@ trainer = L.Trainer(
         lr_callback,
         checkpoint_callback,
         earlystop_callback,
-        lr_find_callback,
+        # lr_find_callback,
         image_preview_callback,
     ],
 )
 dm = SketchesDataModule(batch_size=BATCH_SIZE, encoder=word_encoder)
 
-# tuner = Tuner(trainer)
-# lr_finder = tuner.lr_find(model, datamodule=dm)
-# print("lr_finder:", lr_finder.results)
+tuner = Tuner(trainer)
+lr_finder = tuner.lr_find(model, datamodule=dm)
+print("lr_finder:", lr_finder.results)
 
-# fig = lr_finder.plot(suggest=True)
-# fig.savefig("lr_find.png")
-# plt.close(fig)
+fig = lr_finder.plot(suggest=True)
+fig.savefig("lr_find.png")
+plt.close(fig)
 
-# # Pick point based on plot, or get suggestion
-# new_lr = lr_finder.suggestion()
+# Pick point based on plot, or get suggestion
+new_lr = lr_finder.suggestion()
 
-# # update hparams of the model
-# model.hparams.lr = new_lr
+# update hparams of the model
+model.hparams.lr = new_lr
+model.configure_optimizers()
 
 trainer.fit(model, datamodule=dm, ckpt_path="model.ckpt")
 trainer.validate(model, dm, verbose=True)

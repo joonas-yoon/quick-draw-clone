@@ -80,8 +80,11 @@ class LitLSTM(L.LightningModule):
 
     def configure_optimizers(self):
         try:
-            lr = self.hparams.learning_rate
+            lr = self.hparams.learning_rate or self.hparams.lr
         except AttributeError:
             lr = float(config.lr)
         print("model.configure_optimizers.lr =", lr)
-        return optim.Adam(self.parameters(), lr=lr)
+        optimizer = optim.Adam(self.parameters(), lr=lr)
+        scheduler = optim.lr_scheduler.StepLR(
+            optimizer, step_size=5, gamma=0.85)
+        return [optimizer], [scheduler]
