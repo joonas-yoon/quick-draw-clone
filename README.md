@@ -1,13 +1,5 @@
 # Quick Draw Clone
 
-## TODO
-
-- model
-- - [ ] train
-- - [ ] serve
-- web ui
-- - [ ]
-
 ## Model
 
 ### Dataset
@@ -27,3 +19,17 @@ unzip quickdraw_simplified.zip -d dataset
 ```
 
 There must be `dataset/sketches/sketches/<label>.npz` that are data what we want to train.
+
+### Export
+
+Export to [ONNX](https://github.com/onnx/onnx) as an interface to deploy on web application.
+
+## Web UI
+
+### CRA
+
+Build with Create React Application
+
+### ONNX.js
+
+Use [ONNX.js](https://github.com/microsoft/onnxjs) to load and run ONNX models.
