@@ -167,3 +167,9 @@ dataset/
 
 # W and B
 wandb/
+.lr_find_*
+Quick Draw CNN/
+
+# Quick Draw
+*.bin
+.quickdrawcache
