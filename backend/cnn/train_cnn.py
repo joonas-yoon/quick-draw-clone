@@ -1,15 +1,9 @@
 
 # ## Importings
-import torch.nn.functional as F
+from datamodules import QuickDrawDataAllSet, DataModule
 from typing import Tuple
 from mpl_toolkits.axes_grid1 import ImageGrid
-from torch.utils.data import DataLoader, SequentialSampler, SubsetRandomSampler
-import random
-import bisect
-from typing import Union
 import argparse
-import quickdraw as QD
-import lightning.pytorch as pl
 from lightning.pytorch.callbacks import (
     ModelCheckpoint, EarlyStopping, LearningRateMonitor, LearningRateFinder, Callback
 )
@@ -17,22 +11,20 @@ from lightning.pytorch.loggers import WandbLogger
 import warnings
 from lightning.pytorch.tuner import Tuner
 from PIL import Image as PILImage
-from lightning.pytorch.utilities.types import EVAL_DATALOADERS, STEP_OUTPUT, TRAIN_DATALOADERS
+from lightning.pytorch.utilities.types import STEP_OUTPUT
 import wandb
 import os
-import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-from typing import Any, Optional, Callable, List, Tuple
+from typing import Tuple
 
 import torch
-import torch.optim as optim
-import torch.nn as nn
-from torch.utils.data import DataLoader, SubsetRandomSampler
 from torchvision import transforms as T
 from tqdm import tqdm
 import lightning as L
+
+import models
 
 from glob import glob
 import gc
@@ -79,64 +71,6 @@ with open(config.classes, 'r') as f:
     CLASSES = sorted(filter(lambda s: bool(len(s)), f.readlines()))
     CLASSES = list(map(lambda s: s.replace('\n', ''), CLASSES))
     print('predict classes:', CLASSES)
-
-
-class QuickDrawDataSet(torch.utils.data.Dataset):
-    def __init__(self, name, max_drawings, transform, recognized=True, classes=CLASSES):
-        self.id = classes.index(name)
-        self.datagroup = QD.QuickDrawDataGroup(name,
-                                               max_drawings=max_drawings,
-                                               recognized=recognized)
-        self.max_drawings = max_drawings
-        self.transform = transform
-
-    def __len__(self):
-        return self.datagroup.drawing_count
-
-    def _get_single_item(self, index: int):
-        img = self.datagroup.get_drawing(index).image
-        return (self.transform(img), self.id)
-
-    def __getitem__(self, index: Union[int, slice, np.ndarray]):
-        if type(index) == slice or type(index) == np.ndarray:
-            if type(index) == slice:
-                index = range(index.start, index.stop, index.step or 1)
-            return [self._get_single_item(i) for i in index]
-        return self._get_single_item(index)
-
-
-class QuickDrawDataAllSet(torch.utils.data.Dataset):
-    def __init__(self, classes, max_drawings, transform, recognized=True):
-        params = dict(
-            max_drawings=max_drawings, transform=transform, classes=classes, recognized=recognized
-        )
-        self.groups = [QuickDrawDataSet(cls, **params) for cls in classes]
-        self.offset = [0]
-        self.count = 0
-        for g in self.groups:
-            self.count += len(g)
-            self.offset.append(self.count)
-        self.classes = classes
-
-    def __len__(self):
-        return self.count
-
-    def get_labels(self):
-        return self.classes
-
-    def get_label(self, index: int):
-        return self.classes[index]
-
-    def get_single_item(self, index: int):
-        gi = bisect.bisect_right(self.offset, index) - 1
-        return self.groups[gi][index - self.offset[gi]]
-
-    def __getitem__(self, index: Union[int, slice, np.ndarray]):
-        if type(index) == slice or type(index) == np.ndarray:
-            if type(index) == slice:
-                index = range(index.start, index.stop, index.step or 1)
-            return [self.get_single_item(i) for i in index]
-        return self.get_single_item(index)
 
 
 # Horizontal line as divider
@@ -222,38 +156,6 @@ dataset_all = QuickDrawDataAllSet(CLASSES,
                                   transform=encode_image)
 
 
-def split_index(indices, train_size: float) -> tuple:
-    n = len(indices)
-    i = int(n * train_size)
-    return (indices[:i], indices[i:])
-
-
-class DataModule(L.LightningDataModule):
-    def __init__(self, dataset, batch_size: int, train_split_size: float = 0.8) -> None:
-        super().__init__()
-        self.dataset = dataset
-        self.batch_size = batch_size
-
-        index_all = np.arange(len(dataset))
-        train_valid_idx, test_idx = split_index(
-            index_all, train_size=train_split_size)
-        train_idx, valid_idx = split_index(
-            train_valid_idx, train_size=train_split_size)
-
-        self.train_subsampler = SubsetRandomSampler(train_idx)
-        self.valid_subsampler = SequentialSampler(valid_idx)
-        self.test_subsampler = SequentialSampler(test_idx)
-
-    def train_dataloader(self) -> TRAIN_DATALOADERS:
-        return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.train_subsampler)
-
-    def val_dataloader(self) -> EVAL_DATALOADERS:
-        return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.valid_subsampler)
-
-    def test_dataloader(self) -> EVAL_DATALOADERS:
-        return DataLoader(self.dataset, batch_size=self.batch_size, sampler=self.test_subsampler)
-
-
 def create_image_grid(
     fig,
     nrows_ncols: Tuple[int, int],
@@ -278,84 +180,14 @@ def create_image_grid(
 
 print(HR)
 
-# Define CNN model
-
-
-class CNNModel(pl.LightningModule):
-    def __init__(self, output_classes: int, dropout=0.2):
-        super().__init__()
-        self.conv_layer = nn.Sequential(
-            # (3, 32, 32)
-            nn.Conv2d(3, 16, 2, padding=1),  # (32, 33, 33)
-            nn.ReLU(),
-            nn.Conv2d(16, 32, 2),  # (64, 32, 32)
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # (64, 16, 16)
-
-            nn.Conv2d(32, 64, 2),  # (128, 15, 15)
-            nn.ReLU(),
-            nn.Conv2d(64, 128, 2),  # (256, 14, 14)
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2),  # (256, 7, 7)
-        )
-        self.classifier = nn.Sequential(
-            nn.Linear(128 * 7 * 7, 512),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(512, output_classes),
-            nn.LogSoftmax(dim=1)
-        )
-
-    def forward(self, x):
-        x = self.conv_layer(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        return x
-
-    def training_step(self, batch, batch_idx) -> torch.Tensor:
-        x, y = batch
-        y_hat = self.forward(x)
-        loss = F.nll_loss(y_hat, y)
-        acc = self.accuracy_score(y_hat, y)
-        self.log_dict({'train_loss': loss, 'train_acc': acc})
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.forward(x)
-        loss = F.nll_loss(y_hat, y)
-        acc = self.accuracy_score(y_hat, y)
-        self.log_dict({'valid_loss': loss, 'valid_acc': acc})
-        return loss
-
-    def test_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.forward(x)
-        loss = F.nll_loss(y_hat, y)
-        acc = self.accuracy_score(y_hat, y)
-        self.log_dict({'test_loss': loss, 'test_acc': acc})
-        return loss
-
-    def accuracy_score(self, probs, y):
-        return torch.sum(torch.argmax(probs, dim=1) == y) / len(y)
-
-    def configure_optimizers(self):
-        lr = self.hparams.lr
-        print("model.configure_optimizers.lr =", lr)
-        optimizer = optim.Adam(self.parameters(), lr=lr)
-        scheduler = optim.lr_scheduler.StepLR(
-            optimizer, step_size=5, gamma=0.85)
-        return [optimizer], [scheduler]
-
-
 # ## Load model
-model = CNNModel(len(dataset_all.get_labels()), dropout=config.dropout)
+model = models.CNNModel(len(dataset_all.get_labels()), dropout=config.dropout)
 model.to(device)
 model.save_hyperparameters(config)
 print("Model: ===============================")
 print(model, HR)
 
-wandb_logger.watch(model, log="all")
+wandb_logger.watch(model, log="all", log_graph=True)
 wandb_logger.log_graph(model=model)
 
 lr_callback = LearningRateMonitor()
