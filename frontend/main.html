@@ -68,6 +68,8 @@
 </body>
 
 <script type="text/javascript">
+    const DEBUG = true;
+
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const cursor = {
@@ -76,6 +78,13 @@
         py: null,
     };
     const STROKE_SIZE = 3;
+    const cropBox = {
+        isValid: false,
+        top: Infinity,
+        left: Infinity,
+        right: -Infinity,
+        bottom: -Infinity
+    };
 
     window.onload = async () => {
         resize();
@@ -90,6 +99,10 @@
             cursor.isDrawing = false;
             cursor.px = null;
             cursor.py = null;
+            if (DEBUG) {
+                console.log(cropBox);
+                drawBox(cropBox);
+            }
         });
         canvas.addEventListener('mousemove', (evt) => {
             if (!cursor.isDrawing) return;
@@ -97,6 +110,14 @@
             stroke(clientX, clientY, cursor.px, cursor.py, STROKE_SIZE);
             cursor.px = clientX;
             cursor.py = clientY;
+            cropBox.isValid = true;
+            cropBox.top = Math.min(cropBox.top, clientY);
+            cropBox.bottom = Math.max(cropBox.bottom, clientY);
+            cropBox.left = Math.min(cropBox.left, clientX);
+            cropBox.right = Math.max(cropBox.right, clientX);
+        });
+        canvas.addEventListener('click', (evt) => {
+            drawPoint(evt.clientX, evt.clientY, STROKE_SIZE);
         });
 
         let startTime = now();
@@ -143,6 +164,15 @@
         ctx.lineCap = 'round';
         ctx.moveTo(x, y);
         ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function drawBox({ top, left, right, bottom }) {
+        if (!isFinite(top) || !isFinite(left) || !isFinite(right) || !isFinite(bottom)) return;
+        ctx.beginPath();
+        ctx.rect(left, top, right - left, bottom - top);
+        ctx.strokeStyle = '#ff666699';
         ctx.stroke();
         ctx.closePath();
     }
