@@ -73,9 +73,31 @@
 
 <script type="text/javascript">
     const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const cursor = {
+        isDrawing: false,
+        px: null,
+        py: null,
+    };
+    const STROKE_SIZE = 3;
 
     window.onload = async () => {
         resize();
+
+        canvas.addEventListener('mousedown', () => cursor.isDrawing = true);
+        canvas.addEventListener('mouseup', () => {
+            cursor.isDrawing = false;
+            cursor.px = null;
+            cursor.py = null;
+        });
+        canvas.addEventListener('mousemove', (evt) => {
+            if (!cursor.isDrawing) return;
+            const { clientX, clientY } = evt;
+            stroke(clientX, clientY, cursor.px, cursor.py, STROKE_SIZE);
+            cursor.px = clientX;
+            cursor.py = clientY;
+        });
+
         const model = new Model();
         await model.load();
         console.log(await model.infer(new Float32Array(3 * 32 * 32)));
@@ -86,6 +108,40 @@
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+    }
+
+    function dist(x1, y1, x2, y2) {
+        const dx = x1 - (x2 == null ? x1 : x2);
+        const dy = y1 - (y2 == null ? y1 : y2);
+        return dx * dx + dy * dy;
+    }
+
+    function drawPoint(x, y, rad) {
+        ctx.beginPath();
+        ctx.fillStyle = '#222222ff';
+        ctx.arc(x, y, rad, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function drawLine(x, y, x2, y2, width) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#222222ff';
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        ctx.moveTo(x, y);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function stroke(x, y, px, py, rad) {
+        const d = dist(x, y, px, py);
+        if (d > rad * rad) {
+            drawLine(x, y, px, py, rad * 2);
+        } else {
+            drawPoint(x, y, rad);
+        }
     }
 </script>
 
