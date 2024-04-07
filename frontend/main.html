@@ -57,6 +57,43 @@
             height: 100%;
             background-color: #fdfdfd;
         }
+
+        .result-items {
+            position: fixed;
+            min-width: 120px;
+            width: fit-content;
+            height: fit-content;
+            display: block;
+            top: 0;
+            left: 0;
+            padding: 1em;
+            margin: 0;
+            user-select: none;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .result-items>li {
+            list-style: none;
+            color: #2b2b2b;
+            opacity: 0.1;
+        }
+
+        .result-items>li:nth-child(1) {
+            opacity: 1.0;
+        }
+
+        .result-items>li:nth-child(2) {
+            opacity: 0.75;
+        }
+
+        .result-items>li:nth-child(3) {
+            opacity: 0.5;
+        }
+
+        .result-items>li:nth-child(4) {
+            opacity: 0.2;
+        }
     </style>
 </head>
 
@@ -65,11 +102,16 @@
     <div id="root">
         <canvas id="canvas" width="24" height="24"></canvas>
     </div>
+    <div id="result" class="result-items">
+        <li>...</li>
+    </div>
 </body>
 
 <script type="text/javascript">
     const DEBUG = true;
+    const SHOW_TOP_K = 5;
 
+    const resultBox = document.getElementById('result');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const cursor = {
@@ -85,12 +127,15 @@
         right: -Infinity,
         bottom: -Infinity
     };
+    let labels;
+    let model;
 
     window.onload = async () => {
         resize();
 
-        const { label: labels } = await fetch("labels.json")
+        const { label: _labels } = await fetch("labels.json")
             .then(response => response.json());
+        labels = _labels;
 
         console.log('labels', labels);
 
@@ -103,6 +148,7 @@
                 console.log(cropBox);
                 drawBox(cropBox);
             }
+            inference();
         });
         canvas.addEventListener('mousemove', (evt) => {
             if (!cursor.isDrawing) return;
@@ -120,20 +166,10 @@
             drawPoint(evt.clientX, evt.clientY, STROKE_SIZE);
         });
 
-        let startTime = now();
-        const model = new Model();
+        const startTime = now();
+        model = new Model();
         await model.load();
         console.log('loading time:', timeDelta(startTime, now()), 'ms');
-
-        startTime = now();
-        const output = await model.infer(new Float32Array(3 * 32 * 32));
-        output.sort((a, b) => b.logit - a.logit);
-        console.log('inference', output);
-        console.log('inference time:', timeDelta(startTime, now()), 'ms');
-
-        console.log('Top 10 guess:', output.slice(0, 10).map(e => ({
-            ...e, label: labels[e.index]
-        })));
     };
 
     window.onresize = resize;
@@ -141,6 +177,22 @@
     function resize() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+    }
+
+    async function inference() {
+        if (model == null || labels == null) {
+            console.error('Resources not ready to run yet');
+            return;
+        }
+        const startTime = now();
+        const output = await model.infer(new Float32Array(3 * 32 * 32));
+        output.sort((a, b) => b.logit - a.logit);
+        console.log('inference', output);
+        console.log('inference time:', timeDelta(startTime, now()), 'ms');
+
+        showResultHTML(output.slice(0, SHOW_TOP_K).map(e => ({
+            ...e, label: labels[e.index]
+        })));
     }
 
     function dist(x1, y1, x2, y2) {
@@ -192,6 +244,13 @@
 
     function timeDelta(t1, t2) {
         return t2 - t1;
+    }
+
+    function showResultHTML(results) {
+        resultBox.innerHTML = '';
+        for (const { label, probability } of results) {
+            resultBox.innerHTML += `<li>${label['ko']} (${(probability * 100).toFixed(2)}%)</li>`;
+        }
     }
 </script>
 
