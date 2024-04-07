@@ -1,0 +1,1384 @@
+{
+    "label": [
+        {
+            "en": "aircraft carrier",
+            "ko": "항공모함"
+        },
+        {
+            "en": "airplane",
+            "ko": "비행기"
+        },
+        {
+            "en": "alarm clock",
+            "ko": "알람 시계"
+        },
+        {
+            "en": "ambulance",
+            "ko": "구급차"
+        },
+        {
+            "en": "angel",
+            "ko": "천사"
+        },
+        {
+            "en": "animal migration",
+            "ko": "동물의 이동"
+        },
+        {
+            "en": "ant",
+            "ko": "개미"
+        },
+        {
+            "en": "anvil",
+            "ko": "모루"
+        },
+        {
+            "en": "apple",
+            "ko": "사과"
+        },
+        {
+            "en": "arm",
+            "ko": "팔"
+        },
+        {
+            "en": "asparagus",
+            "ko": "아스파라거스"
+        },
+        {
+            "en": "axe",
+            "ko": "도끼"
+        },
+        {
+            "en": "backpack",
+            "ko": "배낭"
+        },
+        {
+            "en": "banana",
+            "ko": "바나나"
+        },
+        {
+            "en": "bandage",
+            "ko": "반창고"
+        },
+        {
+            "en": "barn",
+            "ko": "헛간"
+        },
+        {
+            "en": "baseball",
+            "ko": "야구"
+        },
+        {
+            "en": "baseball bat",
+            "ko": "야구 방망이"
+        },
+        {
+            "en": "basket",
+            "ko": "바구니"
+        },
+        {
+            "en": "basketball",
+            "ko": "농구"
+        },
+        {
+            "en": "bat",
+            "ko": "박쥐"
+        },
+        {
+            "en": "bathtub",
+            "ko": "욕조"
+        },
+        {
+            "en": "beach",
+            "ko": "해변"
+        },
+        {
+            "en": "bear",
+            "ko": "곰"
+        },
+        {
+            "en": "beard",
+            "ko": "수염"
+        },
+        {
+            "en": "bed",
+            "ko": "침대"
+        },
+        {
+            "en": "bee",
+            "ko": "벌"
+        },
+        {
+            "en": "belt",
+            "ko": "벨트"
+        },
+        {
+            "en": "bench",
+            "ko": "벤치"
+        },
+        {
+            "en": "bicycle",
+            "ko": "자전거"
+        },
+        {
+            "en": "binoculars",
+            "ko": "쌍안경"
+        },
+        {
+            "en": "bird",
+            "ko": "새"
+        },
+        {
+            "en": "birthday cake",
+            "ko": "생일 케이크"
+        },
+        {
+            "en": "blackberry",
+            "ko": "블랙베리"
+        },
+        {
+            "en": "blueberry",
+            "ko": "블루베리"
+        },
+        {
+            "en": "book",
+            "ko": "책"
+        },
+        {
+            "en": "boomerang",
+            "ko": "부메랑"
+        },
+        {
+            "en": "bottlecap",
+            "ko": "뚜껑"
+        },
+        {
+            "en": "bowtie",
+            "ko": "보타이"
+        },
+        {
+            "en": "bracelet",
+            "ko": "팔찌"
+        },
+        {
+            "en": "brain",
+            "ko": "뇌"
+        },
+        {
+            "en": "bread",
+            "ko": "빵"
+        },
+        {
+            "en": "bridge",
+            "ko": "다리"
+        },
+        {
+            "en": "broccoli",
+            "ko": "브로콜리"
+        },
+        {
+            "en": "broom",
+            "ko": "빗자루"
+        },
+        {
+            "en": "bucket",
+            "ko": "양동이"
+        },
+        {
+            "en": "bulldozer",
+            "ko": "불도저"
+        },
+        {
+            "en": "bus",
+            "ko": "버스"
+        },
+        {
+            "en": "bush",
+            "ko": "수풀"
+        },
+        {
+            "en": "butterfly",
+            "ko": "나비"
+        },
+        {
+            "en": "cactus",
+            "ko": "선인장"
+        },
+        {
+            "en": "cake",
+            "ko": "케이크"
+        },
+        {
+            "en": "calculator",
+            "ko": "계산기"
+        },
+        {
+            "en": "calendar",
+            "ko": "달력"
+        },
+        {
+            "en": "camel",
+            "ko": "낙타"
+        },
+        {
+            "en": "camera",
+            "ko": "카메라"
+        },
+        {
+            "en": "camouflage",
+            "ko": "위장"
+        },
+        {
+            "en": "campfire",
+            "ko": "모닥불"
+        },
+        {
+            "en": "candle",
+            "ko": "촛불"
+        },
+        {
+            "en": "cannon",
+            "ko": "대포"
+        },
+        {
+            "en": "canoe",
+            "ko": "카누"
+        },
+        {
+            "en": "car",
+            "ko": "자동차"
+        },
+        {
+            "en": "carrot",
+            "ko": "당근"
+        },
+        {
+            "en": "castle",
+            "ko": "성"
+        },
+        {
+            "en": "cat",
+            "ko": "고양이"
+        },
+        {
+            "en": "ceiling fan",
+            "ko": "천장 선풍기"
+        },
+        {
+            "en": "cello",
+            "ko": "휴대폰"
+        },
+        {
+            "en": "cell phone",
+            "ko": "첼로"
+        },
+        {
+            "en": "chair",
+            "ko": "의자"
+        },
+        {
+            "en": "chandelier",
+            "ko": "샹들리에"
+        },
+        {
+            "en": "church",
+            "ko": "교회"
+        },
+        {
+            "en": "circle",
+            "ko": "원"
+        },
+        {
+            "en": "clarinet",
+            "ko": "클라리넷"
+        },
+        {
+            "en": "clock",
+            "ko": "시계"
+        },
+        {
+            "en": "cloud",
+            "ko": "구름"
+        },
+        {
+            "en": "coffee cup",
+            "ko": "커피 컵"
+        },
+        {
+            "en": "compass",
+            "ko": "나침반"
+        },
+        {
+            "en": "computer",
+            "ko": "컴퓨터"
+        },
+        {
+            "en": "cookie",
+            "ko": "쿠키"
+        },
+        {
+            "en": "cooler",
+            "ko": "쿨러"
+        },
+        {
+            "en": "couch",
+            "ko": "소파"
+        },
+        {
+            "en": "cow",
+            "ko": "소"
+        },
+        {
+            "en": "crab",
+            "ko": "게"
+        },
+        {
+            "en": "crayon",
+            "ko": "크레용"
+        },
+        {
+            "en": "crocodile",
+            "ko": "악어"
+        },
+        {
+            "en": "crown",
+            "ko": "왕관"
+        },
+        {
+            "en": "cruise ship",
+            "ko": "크루즈선"
+        },
+        {
+            "en": "cup",
+            "ko": "컵"
+        },
+        {
+            "en": "diamond",
+            "ko": "다이아몬드"
+        },
+        {
+            "en": "dishwasher",
+            "ko": "식기세척기"
+        },
+        {
+            "en": "diving board",
+            "ko": "다이빙대"
+        },
+        {
+            "en": "dog",
+            "ko": "개"
+        },
+        {
+            "en": "dolphin",
+            "ko": "돌고래"
+        },
+        {
+            "en": "donut",
+            "ko": "도넛"
+        },
+        {
+            "en": "door",
+            "ko": "문"
+        },
+        {
+            "en": "dragon",
+            "ko": "용"
+        },
+        {
+            "en": "dresser",
+            "ko": "옷장"
+        },
+        {
+            "en": "drill",
+            "ko": "드릴"
+        },
+        {
+            "en": "drums",
+            "ko": "북"
+        },
+        {
+            "en": "duck",
+            "ko": "오리"
+        },
+        {
+            "en": "dumbbell",
+            "ko": "아령"
+        },
+        {
+            "en": "ear",
+            "ko": "귀"
+        },
+        {
+            "en": "elbow",
+            "ko": "팔꿈치"
+        },
+        {
+            "en": "elephant",
+            "ko": "코끼리"
+        },
+        {
+            "en": "envelope",
+            "ko": "봉투"
+        },
+        {
+            "en": "eraser",
+            "ko": "지우개"
+        },
+        {
+            "en": "eye",
+            "ko": "눈"
+        },
+        {
+            "en": "eyeglasses",
+            "ko": "안경"
+        },
+        {
+            "en": "face",
+            "ko": "얼굴"
+        },
+        {
+            "en": "fan",
+            "ko": "선풍기"
+        },
+        {
+            "en": "feather",
+            "ko": "깃털"
+        },
+        {
+            "en": "fence",
+            "ko": "울타리"
+        },
+        {
+            "en": "finger",
+            "ko": "손가락"
+        },
+        {
+            "en": "fire hydrant",
+            "ko": "소화전"
+        },
+        {
+            "en": "fireplace",
+            "ko": "벽난로"
+        },
+        {
+            "en": "firetruck",
+            "ko": "소방차"
+        },
+        {
+            "en": "fish",
+            "ko": "물고기"
+        },
+        {
+            "en": "flamingo",
+            "ko": "홍학"
+        },
+        {
+            "en": "flashlight",
+            "ko": "손전등"
+        },
+        {
+            "en": "flip flops",
+            "ko": "슬리퍼"
+        },
+        {
+            "en": "floor lamp",
+            "ko": "스탠드"
+        },
+        {
+            "en": "flower",
+            "ko": "꽃"
+        },
+        {
+            "en": "flying saucer",
+            "ko": "비행접시"
+        },
+        {
+            "en": "foot",
+            "ko": "발"
+        },
+        {
+            "en": "fork",
+            "ko": "포크"
+        },
+        {
+            "en": "frog",
+            "ko": "개구리"
+        },
+        {
+            "en": "frying pan",
+            "ko": "프라이팬"
+        },
+        {
+            "en": "garden",
+            "ko": "정원"
+        },
+        {
+            "en": "garden hose",
+            "ko": "호스"
+        },
+        {
+            "en": "giraffe",
+            "ko": "기린"
+        },
+        {
+            "en": "goatee",
+            "ko": "수염"
+        },
+        {
+            "en": "golf club",
+            "ko": "골프채"
+        },
+        {
+            "en": "grapes",
+            "ko": "포도"
+        },
+        {
+            "en": "grass",
+            "ko": "풀"
+        },
+        {
+            "en": "guitar",
+            "ko": "기타"
+        },
+        {
+            "en": "hamburger",
+            "ko": "햄버거"
+        },
+        {
+            "en": "hammer",
+            "ko": "망치"
+        },
+        {
+            "en": "hand",
+            "ko": "손"
+        },
+        {
+            "en": "harp",
+            "ko": "하프"
+        },
+        {
+            "en": "hat",
+            "ko": "모자"
+        },
+        {
+            "en": "headphones",
+            "ko": "헤드폰"
+        },
+        {
+            "en": "hedgehog",
+            "ko": "고슴도치"
+        },
+        {
+            "en": "helicopter",
+            "ko": "헬리콥터"
+        },
+        {
+            "en": "helmet",
+            "ko": "헬멧"
+        },
+        {
+            "en": "hexagon",
+            "ko": "육각형"
+        },
+        {
+            "en": "hockey puck",
+            "ko": "하키 퍽"
+        },
+        {
+            "en": "hockey stick",
+            "ko": "하키 스틱"
+        },
+        {
+            "en": "horse",
+            "ko": "말"
+        },
+        {
+            "en": "hospital",
+            "ko": "병원"
+        },
+        {
+            "en": "hot air balloon",
+            "ko": "열기구"
+        },
+        {
+            "en": "hot dog",
+            "ko": "핫도그"
+        },
+        {
+            "en": "hot tub",
+            "ko": "온수 욕조"
+        },
+        {
+            "en": "hourglass",
+            "ko": "모래시계"
+        },
+        {
+            "en": "house",
+            "ko": "집"
+        },
+        {
+            "en": "house plant",
+            "ko": "실내식물"
+        },
+        {
+            "en": "hurricane",
+            "ko": "허리케인"
+        },
+        {
+            "en": "ice cream",
+            "ko": "아이스크림"
+        },
+        {
+            "en": "jacket",
+            "ko": "재킷"
+        },
+        {
+            "en": "jail",
+            "ko": "감옥"
+        },
+        {
+            "en": "kangaroo",
+            "ko": "캥거루"
+        },
+        {
+            "en": "key",
+            "ko": "열쇠"
+        },
+        {
+            "en": "keyboard",
+            "ko": "키보드"
+        },
+        {
+            "en": "knee",
+            "ko": "무릎"
+        },
+        {
+            "en": "knife",
+            "ko": "칼"
+        },
+        {
+            "en": "ladder",
+            "ko": "사다리"
+        },
+        {
+            "en": "lantern",
+            "ko": "등불"
+        },
+        {
+            "en": "laptop",
+            "ko": "노트북"
+        },
+        {
+            "en": "leaf",
+            "ko": "잎"
+        },
+        {
+            "en": "leg",
+            "ko": "다리"
+        },
+        {
+            "en": "light bulb",
+            "ko": "전구"
+        },
+        {
+            "en": "lighter",
+            "ko": "라이터"
+        },
+        {
+            "en": "lighthouse",
+            "ko": "등대"
+        },
+        {
+            "en": "lightning",
+            "ko": "번개"
+        },
+        {
+            "en": "line",
+            "ko": "선"
+        },
+        {
+            "en": "lion",
+            "ko": "사자"
+        },
+        {
+            "en": "lipstick",
+            "ko": "립스틱"
+        },
+        {
+            "en": "lobster",
+            "ko": "바닷가재"
+        },
+        {
+            "en": "lollipop",
+            "ko": "막대사탕"
+        },
+        {
+            "en": "mailbox",
+            "ko": "우편함"
+        },
+        {
+            "en": "map",
+            "ko": "지도"
+        },
+        {
+            "en": "marker",
+            "ko": "마커"
+        },
+        {
+            "en": "matches",
+            "ko": "성냥"
+        },
+        {
+            "en": "megaphone",
+            "ko": "확성기"
+        },
+        {
+            "en": "mermaid",
+            "ko": "인어"
+        },
+        {
+            "en": "microphone",
+            "ko": "마이크"
+        },
+        {
+            "en": "microwave",
+            "ko": "전자레인지"
+        },
+        {
+            "en": "monkey",
+            "ko": "원숭이"
+        },
+        {
+            "en": "moon",
+            "ko": "달"
+        },
+        {
+            "en": "mosquito",
+            "ko": "모기"
+        },
+        {
+            "en": "motorbike",
+            "ko": "오토바이"
+        },
+        {
+            "en": "mountain",
+            "ko": "산"
+        },
+        {
+            "en": "mouse",
+            "ko": "쥐"
+        },
+        {
+            "en": "moustache",
+            "ko": "콧수염"
+        },
+        {
+            "en": "mouth",
+            "ko": "입"
+        },
+        {
+            "en": "mug",
+            "ko": "컵"
+        },
+        {
+            "en": "mushroom",
+            "ko": "버섯"
+        },
+        {
+            "en": "nail",
+            "ko": "못"
+        },
+        {
+            "en": "necklace",
+            "ko": "목걸이"
+        },
+        {
+            "en": "nose",
+            "ko": "코"
+        },
+        {
+            "en": "ocean",
+            "ko": "바다"
+        },
+        {
+            "en": "octagon",
+            "ko": "팔각형"
+        },
+        {
+            "en": "octopus",
+            "ko": "문어"
+        },
+        {
+            "en": "onion",
+            "ko": "양파"
+        },
+        {
+            "en": "oven",
+            "ko": "오븐"
+        },
+        {
+            "en": "owl",
+            "ko": "올빼미"
+        },
+        {
+            "en": "paintbrush",
+            "ko": "페인트통"
+        },
+        {
+            "en": "paint can",
+            "ko": "붓"
+        },
+        {
+            "en": "palm tree",
+            "ko": "야자수"
+        },
+        {
+            "en": "panda",
+            "ko": "판다"
+        },
+        {
+            "en": "pants",
+            "ko": "바지"
+        },
+        {
+            "en": "paper clip",
+            "ko": "클립"
+        },
+        {
+            "en": "parachute",
+            "ko": "낙하산"
+        },
+        {
+            "en": "parrot",
+            "ko": "앵무새"
+        },
+        {
+            "en": "passport",
+            "ko": "여권"
+        },
+        {
+            "en": "peanut",
+            "ko": "땅콩"
+        },
+        {
+            "en": "pear",
+            "ko": "배"
+        },
+        {
+            "en": "peas",
+            "ko": "완두콩"
+        },
+        {
+            "en": "pencil",
+            "ko": "연필"
+        },
+        {
+            "en": "penguin",
+            "ko": "펭귄"
+        },
+        {
+            "en": "piano",
+            "ko": "피아노"
+        },
+        {
+            "en": "pickup truck",
+            "ko": "픽업트럭"
+        },
+        {
+            "en": "picture frame",
+            "ko": "액자"
+        },
+        {
+            "en": "pig",
+            "ko": "돼지"
+        },
+        {
+            "en": "pillow",
+            "ko": "베개"
+        },
+        {
+            "en": "pineapple",
+            "ko": "파인애플"
+        },
+        {
+            "en": "pizza",
+            "ko": "피자"
+        },
+        {
+            "en": "pliers",
+            "ko": "뜀박질"
+        },
+        {
+            "en": "police car",
+            "ko": "경찰차"
+        },
+        {
+            "en": "pond",
+            "ko": "연못"
+        },
+        {
+            "en": "pool",
+            "ko": "수영장"
+        },
+        {
+            "en": "popsicle",
+            "ko": "아이스 스크림"
+        },
+        {
+            "en": "postcard",
+            "ko": "엽서"
+        },
+        {
+            "en": "potato",
+            "ko": "감자"
+        },
+        {
+            "en": "power outlet",
+            "ko": "전원 콘센트"
+        },
+        {
+            "en": "purse",
+            "ko": "지갑"
+        },
+        {
+            "en": "rabbit",
+            "ko": "토끼"
+        },
+        {
+            "en": "raccoon",
+            "ko": "너구리"
+        },
+        {
+            "en": "radio",
+            "ko": "라디오"
+        },
+        {
+            "en": "rain",
+            "ko": "비"
+        },
+        {
+            "en": "rainbow",
+            "ko": "무지개"
+        },
+        {
+            "en": "rake",
+            "ko": "갈퀴"
+        },
+        {
+            "en": "remote control",
+            "ko": "리모컨"
+        },
+        {
+            "en": "rhinoceros",
+            "ko": "코뿔소"
+        },
+        {
+            "en": "rifle",
+            "ko": "소총"
+        },
+        {
+            "en": "river",
+            "ko": "강"
+        },
+        {
+            "en": "roller coaster",
+            "ko": "롤러코스터"
+        },
+        {
+            "en": "rollerskates",
+            "ko": "롤러스케이트"
+        },
+        {
+            "en": "sailboat",
+            "ko": "요트"
+        },
+        {
+            "en": "sandwich",
+            "ko": "샌드위치"
+        },
+        {
+            "en": "saw",
+            "ko": "톱"
+        },
+        {
+            "en": "saxophone",
+            "ko": "색소폰"
+        },
+        {
+            "en": "school bus",
+            "ko": "통학버스"
+        },
+        {
+            "en": "scissors",
+            "ko": "가위"
+        },
+        {
+            "en": "scorpion",
+            "ko": "전갈"
+        },
+        {
+            "en": "screwdriver",
+            "ko": "드라이버"
+        },
+        {
+            "en": "sea turtle",
+            "ko": "바다거북"
+        },
+        {
+            "en": "see saw",
+            "ko": "시소"
+        },
+        {
+            "en": "shark",
+            "ko": "상어"
+        },
+        {
+            "en": "sheep",
+            "ko": "양"
+        },
+        {
+            "en": "shoe",
+            "ko": "신발"
+        },
+        {
+            "en": "shorts",
+            "ko": "반바지"
+        },
+        {
+            "en": "shovel",
+            "ko": "삽"
+        },
+        {
+            "en": "sink",
+            "ko": "싱크대"
+        },
+        {
+            "en": "skateboard",
+            "ko": "스케이트보드"
+        },
+        {
+            "en": "skull",
+            "ko": "해골"
+        },
+        {
+            "en": "skyscraper",
+            "ko": "고층 빌딩"
+        },
+        {
+            "en": "sleeping bag",
+            "ko": "침낭"
+        },
+        {
+            "en": "smiley face",
+            "ko": "웃는 얼굴"
+        },
+        {
+            "en": "snail",
+            "ko": "달팽이"
+        },
+        {
+            "en": "snake",
+            "ko": "뱀"
+        },
+        {
+            "en": "snorkel",
+            "ko": "스노클링"
+        },
+        {
+            "en": "snowflake",
+            "ko": "눈송이"
+        },
+        {
+            "en": "snowman",
+            "ko": "눈사람"
+        },
+        {
+            "en": "soccer ball",
+            "ko": "축구공"
+        },
+        {
+            "en": "sock",
+            "ko": "양말"
+        },
+        {
+            "en": "speedboat",
+            "ko": "모터보트"
+        },
+        {
+            "en": "spider",
+            "ko": "거미"
+        },
+        {
+            "en": "spoon",
+            "ko": "숟가락"
+        },
+        {
+            "en": "spreadsheet",
+            "ko": "스프레드시트"
+        },
+        {
+            "en": "square",
+            "ko": "정사각형"
+        },
+        {
+            "en": "squiggle",
+            "ko": "구불구불한 선"
+        },
+        {
+            "en": "squirrel",
+            "ko": "다람쥐"
+        },
+        {
+            "en": "stairs",
+            "ko": "계단"
+        },
+        {
+            "en": "star",
+            "ko": "별"
+        },
+        {
+            "en": "steak",
+            "ko": "스테이크"
+        },
+        {
+            "en": "stereo",
+            "ko": "스테레오"
+        },
+        {
+            "en": "stethoscope",
+            "ko": "청진기"
+        },
+        {
+            "en": "stitches",
+            "ko": "바느질"
+        },
+        {
+            "en": "stop sign",
+            "ko": "정지 신호"
+        },
+        {
+            "en": "stove",
+            "ko": "가스레인지"
+        },
+        {
+            "en": "strawberry",
+            "ko": "딸기"
+        },
+        {
+            "en": "streetlight",
+            "ko": "가로등"
+        },
+        {
+            "en": "string bean",
+            "ko": "강낭콩"
+        },
+        {
+            "en": "submarine",
+            "ko": "잠수함"
+        },
+        {
+            "en": "suitcase",
+            "ko": "여행 가방"
+        },
+        {
+            "en": "sun",
+            "ko": "태양"
+        },
+        {
+            "en": "swan",
+            "ko": "백조"
+        },
+        {
+            "en": "sweater",
+            "ko": "스웨터"
+        },
+        {
+            "en": "swing set",
+            "ko": "그네"
+        },
+        {
+            "en": "sword",
+            "ko": "칼"
+        },
+        {
+            "en": "syringe",
+            "ko": "주사기"
+        },
+        {
+            "en": "table",
+            "ko": "티셔츠"
+        },
+        {
+            "en": "teapot",
+            "ko": "테이블"
+        },
+        {
+            "en": "teddy-bear",
+            "ko": "주전자"
+        },
+        {
+            "en": "telephone",
+            "ko": "테디베어"
+        },
+        {
+            "en": "television",
+            "ko": "전화"
+        },
+        {
+            "en": "tennis racquet",
+            "ko": "텔레비전"
+        },
+        {
+            "en": "tent",
+            "ko": "테니스 라켓"
+        },
+        {
+            "en": "The Eiffel Tower",
+            "ko": "천막"
+        },
+        {
+            "en": "The Great Wall of China",
+            "ko": "에펠탑"
+        },
+        {
+            "en": "The Mona Lisa",
+            "ko": "만리장성"
+        },
+        {
+            "en": "tiger",
+            "ko": "모나리자"
+        },
+        {
+            "en": "toaster",
+            "ko": "호랑이"
+        },
+        {
+            "en": "toe",
+            "ko": "토스터"
+        },
+        {
+            "en": "toilet",
+            "ko": "발가락"
+        },
+        {
+            "en": "tooth",
+            "ko": "화장실"
+        },
+        {
+            "en": "toothbrush",
+            "ko": "이"
+        },
+        {
+            "en": "toothpaste",
+            "ko": "칫솔"
+        },
+        {
+            "en": "tornado",
+            "ko": "치약"
+        },
+        {
+            "en": "tractor",
+            "ko": "토네이도"
+        },
+        {
+            "en": "traffic light",
+            "ko": "트랙터"
+        },
+        {
+            "en": "train",
+            "ko": "신호등"
+        },
+        {
+            "en": "tree",
+            "ko": "기차"
+        },
+        {
+            "en": "triangle",
+            "ko": "나무"
+        },
+        {
+            "en": "trombone",
+            "ko": "삼각형"
+        },
+        {
+            "en": "truck",
+            "ko": "트롬본"
+        },
+        {
+            "en": "trumpet",
+            "ko": "트럭"
+        },
+        {
+            "en": "t-shirt",
+            "ko": "트럼펫"
+        },
+        {
+            "en": "umbrella",
+            "ko": "우산"
+        },
+        {
+            "en": "underwear",
+            "ko": "속옷"
+        },
+        {
+            "en": "van",
+            "ko": "밴"
+        },
+        {
+            "en": "vase",
+            "ko": "화병"
+        },
+        {
+            "en": "violin",
+            "ko": "바이올린"
+        },
+        {
+            "en": "washing machine",
+            "ko": "세탁기"
+        },
+        {
+            "en": "watermelon",
+            "ko": "수박"
+        },
+        {
+            "en": "waterslide",
+            "ko": "워터슬라이드"
+        },
+        {
+            "en": "whale",
+            "ko": "고래"
+        },
+        {
+            "en": "wheel",
+            "ko": "바퀴"
+        },
+        {
+            "en": "windmill",
+            "ko": "풍차"
+        },
+        {
+            "en": "wine bottle",
+            "ko": "와인병"
+        },
+        {
+            "en": "wine glass",
+            "ko": "와인잔"
+        },
+        {
+            "en": "wristwatch",
+            "ko": "손목시계"
+        },
+        {
+            "en": "yoga",
+            "ko": "요가"
+        },
+        {
+            "en": "zebra",
+            "ko": "얼룩말"
+        },
+        {
+            "en": "zigzag",
+            "ko": "지그재그"
+        }
+    ]
+}

@@ -25,12 +25,8 @@
                 const dims = [1, 3, 32, 32];
                 const tensor = new ort.Tensor('float32', rgb_input, dims);
                 const result = await this.session.run({ 'input.1': tensor });
-                const probs = Array.from(result[30].cpuData);
-                const sum = (arr) => arr.reduce((partialSum, a) => partialSum + a, 0);
-                const probsSorted = probs
-                    .map((x, i) => ({ data: x, prob: Math.exp(x), index: i }))
-                    .sort((a, b) => b.prop - a.prop);
-                return probsSorted;
+                const probs = Array.from(result[Object.keys(result)].cpuData);
+                return probs.map((x, i) => ({ logit: x, probability: Math.exp(x), index: i }));
             }
         }
     </script>
@@ -84,6 +80,11 @@
     window.onload = async () => {
         resize();
 
+        const { label: labels } = await fetch("labels.json")
+            .then(response => response.json());
+
+        console.log('labels', labels);
+
         canvas.addEventListener('mousedown', () => cursor.isDrawing = true);
         canvas.addEventListener('mouseup', () => {
             cursor.isDrawing = false;
@@ -98,9 +99,20 @@
             cursor.py = clientY;
         });
 
+        let startTime = now();
         const model = new Model();
         await model.load();
-        console.log(await model.infer(new Float32Array(3 * 32 * 32)));
+        console.log('loading time:', timeDelta(startTime, now()), 'ms');
+
+        startTime = now();
+        const output = await model.infer(new Float32Array(3 * 32 * 32));
+        output.sort((a, b) => b.logit - a.logit);
+        console.log('inference', output);
+        console.log('inference time:', timeDelta(startTime, now()), 'ms');
+
+        console.log('Top 10 guess:', output.slice(0, 10).map(e => ({
+            ...e, label: labels[e.index]
+        })));
     };
 
     window.onresize = resize;
@@ -142,6 +154,14 @@
         } else {
             drawPoint(x, y, rad);
         }
+    }
+
+    function now() {
+        return (new Date()).getTime();
+    }
+
+    function timeDelta(t1, t2) {
+        return t2 - t1;
     }
 </script>
 
