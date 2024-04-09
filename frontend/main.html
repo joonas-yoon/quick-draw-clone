@@ -13,7 +13,7 @@
             constructor() { }
 
             async load() {
-                this.session = await ort.InferenceSession.create('./public/model_cnn_74.optimized.onnx');
+                this.session = await ort.InferenceSession.create('./public/model_cnn_74.onnx');
             }
 
             /**
@@ -96,10 +96,10 @@
         }
 
         #preview {
+            display: none;
             position: fixed;
             right: 0;
             z-index: 3;
-            display: block;
             top: 0;
             border: 1px solid #ccc;
             width: 120px;
@@ -107,14 +107,19 @@
         }
 
         #canvas3 {
-            display: block;
+            display: none;
             position: fixed;
             top: 120px;
             right: 0;
             z-index: 3;
             border: 1px solid #ccc;
-            width: 32px;
-            height: 32px;
+            width: 120px;
+            height: 120px;
+        }
+
+        body.debug #preview,
+        body.debug #canvas3 {
+            display: block;
         }
     </style>
 </head>
@@ -135,6 +140,7 @@
     const DEBUG = true;
     const SHOW_TOP_K = 5;
 
+    const body = document.body;
     const resultBox = document.getElementById('result');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -160,6 +166,10 @@
     window.onload = async () => {
         resize();
 
+        if (DEBUG) {
+            body.className = 'debug';
+        }
+
         const { label: _labels } = await fetch("labels.json")
             .then(response => response.json());
         labels = _labels;
@@ -173,7 +183,7 @@
             cursor.py = null;
             if (DEBUG) {
                 console.log(cropBox);
-                drawBox(cropBox);
+                // drawBox(cropBox);
             }
             inference();
         });
@@ -228,20 +238,25 @@
         copyContext.clearRect(0, 0, 32, 32);
         copyContext.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
 
-        document.getElementById('canvas3')
-            .getContext('2d')
-            .drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
+        if (DEBUG) {
+            const tempCtx = document.getElementById('canvas3').getContext('2d');
+            tempCtx.clearRect(0, 0, 32, 32);
+            tempCtx.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
+        }
 
         const imageResize = copyContext.getImageData(0, 0, 32, 32);
-        console.log('input image:', imageResize.data);
         const imageResizeRGB = imageResize.data.filter((value, index, _) => index % 4 != 0);
         const input = new Float32Array(imageResizeRGB).map(i => i / 255.);
-        console.log('input image:', input);
+        if (DEBUG) {
+            console.log('input image:', imageResize.data, input);
+        }
 
         const output = await model.infer(input);
         output.sort((a, b) => b.logit - a.logit);
+        if (DEBUG) {
         console.log('inference', output);
         console.log('inference time:', timeDelta(startTime, now()), 'ms');
+        }
 
         showResultHTML(output.slice(0, SHOW_TOP_K).map(e => ({
             ...e, label: labels[e.index]
