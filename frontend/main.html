@@ -13,7 +13,7 @@
             constructor() { }
 
             async load() {
-                this.session = await ort.InferenceSession.create('./src/model_cnn_74.optimized.onnx');
+                this.session = await ort.InferenceSession.create('./public/model_cnn_74.optimized.onnx');
             }
 
             /**
@@ -94,6 +94,28 @@
         .result-items>li:nth-child(4) {
             opacity: 0.2;
         }
+
+        #preview {
+            position: fixed;
+            right: 0;
+            z-index: 3;
+            display: block;
+            top: 0;
+            border: 1px solid #ccc;
+            width: 120px;
+            height: 120px;
+        }
+
+        #canvas3 {
+            display: block;
+            position: fixed;
+            top: 120px;
+            right: 0;
+            z-index: 3;
+            border: 1px solid #ccc;
+            width: 32px;
+            height: 32px;
+        }
     </style>
 </head>
 
@@ -101,6 +123,8 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root">
         <canvas id="canvas" width="24" height="24"></canvas>
+        <img id="preview" />
+        <canvas id="canvas3" width="32" height="32"></canvas>
     </div>
     <div id="result" class="result-items">
         <li>...</li>
@@ -129,6 +153,9 @@
     };
     let labels;
     let model;
+
+    const canvasCopy = document.createElement("canvas");
+    const copyContext = canvasCopy.getContext("2d");
 
     window.onload = async () => {
         resize();
@@ -166,6 +193,9 @@
             drawPoint(evt.clientX, evt.clientY, STROKE_SIZE);
         });
 
+        canvasCopy.width = 32;
+        canvasCopy.height = 32;
+
         const startTime = now();
         model = new Model();
         await model.load();
@@ -185,7 +215,30 @@
             return;
         }
         const startTime = now();
-        const output = await model.infer(new Float32Array(3 * 32 * 32));
+        const { top, left, right, bottom } = cropBox;
+        const oImgWidth = right - left;
+        const oImgHeight = bottom - top;
+
+        const imageDrawData = ctx.getImageData(left, top, oImgWidth, oImgHeight);
+        const imageDraw = imagedataToImage(imageDrawData);
+
+        document.getElementById('preview').src = imageDraw.src;
+        console.log(oImgWidth, oImgHeight);
+
+        copyContext.clearRect(0, 0, 32, 32);
+        copyContext.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
+
+        document.getElementById('canvas3')
+            .getContext('2d')
+            .drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
+
+        const imageResize = copyContext.getImageData(0, 0, 32, 32);
+        console.log('input image:', imageResize.data);
+        const imageResizeRGB = imageResize.data.filter((value, index, _) => index % 4 != 0);
+        const input = new Float32Array(imageResizeRGB).map(i => i / 255.);
+        console.log('input image:', input);
+
+        const output = await model.infer(input);
         output.sort((a, b) => b.logit - a.logit);
         console.log('inference', output);
         console.log('inference time:', timeDelta(startTime, now()), 'ms');
@@ -251,6 +304,18 @@
         for (const { label, probability } of results) {
             resultBox.innerHTML += `<li>${label['ko']} (${(probability * 100).toFixed(2)}%)</li>`;
         }
+    }
+
+    // https://stackoverflow.com/a/41229530/13677554
+    function imagedataToImage(imagedata) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = imagedata.width;
+        canvas.height = imagedata.height;
+        context.putImageData(imagedata, 0, 0);
+        const image = new Image();
+        image.src = canvas.toDataURL();
+        return image;
     }
 </script>
 
