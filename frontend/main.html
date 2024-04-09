@@ -194,10 +194,11 @@
             cursor.px = clientX;
             cursor.py = clientY;
             cropBox.isValid = true;
-            cropBox.top = Math.min(cropBox.top, clientY);
-            cropBox.bottom = Math.max(cropBox.bottom, clientY);
-            cropBox.left = Math.min(cropBox.left, clientX);
-            cropBox.right = Math.max(cropBox.right, clientX);
+            const PADDING = 5;
+            cropBox.top = Math.min(cropBox.top, clientY - PADDING);
+            cropBox.bottom = Math.max(cropBox.bottom, clientY + PADDING);
+            cropBox.left = Math.min(cropBox.left, clientX - PADDING);
+            cropBox.right = Math.max(cropBox.right, clientX + PADDING);
         });
         canvas.addEventListener('click', (evt) => {
             drawPoint(evt.clientX, evt.clientY, STROKE_SIZE);
@@ -219,48 +220,65 @@
         canvas.height = window.innerHeight;
     }
 
-    async function inference() {
+    /**
+     * @param image Float32Array
+     **/
+    function normalize(image) {
+        const [mean, std] = [0.5, 0.5];
+        return image.map(i => (i - mean) / std);
+    }
+
+    function inference() {
         if (model == null || labels == null) {
             console.error('Resources not ready to run yet');
             return;
         }
-        const startTime = now();
         const { top, left, right, bottom } = cropBox;
         const oImgWidth = right - left;
         const oImgHeight = bottom - top;
 
+        const imageProcessStartTime = now();
         const imageDrawData = ctx.getImageData(left, top, oImgWidth, oImgHeight);
         const imageDraw = imagedataToImage(imageDrawData);
+        imageDraw.onload = async () => {
+            if (DEBUG) {
+                document.getElementById('preview').src = imageDraw.src;
+                console.log(oImgWidth, oImgHeight);
+            }
 
-        document.getElementById('preview').src = imageDraw.src;
-        console.log(oImgWidth, oImgHeight);
+            // copy and resize image to (32, 32)
+            copyContext.clearRect(0, 0, 32, 32);
+            copyContext.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
 
-        copyContext.clearRect(0, 0, 32, 32);
-        copyContext.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
+            if (DEBUG) {
+                const tempCtx = document.getElementById('canvas3').getContext('2d');
+                tempCtx.clearRect(0, 0, 32, 32);
+                tempCtx.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
+            }
 
-        if (DEBUG) {
-            const tempCtx = document.getElementById('canvas3').getContext('2d');
-            tempCtx.clearRect(0, 0, 32, 32);
-            tempCtx.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
-        }
+            // RGBA image in range of [0, 255] to RGB image in range of [0.0, 1.0]
+            const imageResize = copyContext.getImageData(0, 0, 32, 32);
+            const imageResizeRGB = imageResize.data.filter((value, index, _) => index % 4 != 0);
+            const input = new Float32Array(imageResizeRGB).map(i => i / 255.);
+            if (DEBUG) {
+                console.log('input image:', imageResize.data, input);
+            }
+            console.info('image processed in', timeDelta(imageProcessStartTime, now()), 'ms');
 
-        const imageResize = copyContext.getImageData(0, 0, 32, 32);
-        const imageResizeRGB = imageResize.data.filter((value, index, _) => index % 4 != 0);
-        const input = new Float32Array(imageResizeRGB).map(i => i / 255.);
-        if (DEBUG) {
-            console.log('input image:', imageResize.data, input);
-        }
+            // normalize image and infer
+            const modelInferStartTime = now();
+            const output = await model.infer(normalize(input));
+            output.sort((a, b) => b.logit - a.logit);
+            if (DEBUG) {
+                console.log('inference', output);
+            }
+            console.info('inferenced in', timeDelta(modelInferStartTime, now()), 'ms');
 
-        const output = await model.infer(input);
-        output.sort((a, b) => b.logit - a.logit);
-        if (DEBUG) {
-        console.log('inference', output);
-        console.log('inference time:', timeDelta(startTime, now()), 'ms');
-        }
-
-        showResultHTML(output.slice(0, SHOW_TOP_K).map(e => ({
-            ...e, label: labels[e.index]
-        })));
+            // show result on HUD
+            showResultHTML(output.slice(0, SHOW_TOP_K).map(e => ({
+                ...e, label: labels[e.index]
+            })));
+        };
     }
 
     function dist(x1, y1, x2, y2) {
@@ -327,9 +345,11 @@
         const context = canvas.getContext('2d');
         canvas.width = imagedata.width;
         canvas.height = imagedata.height;
+        console.log('canvas', canvas);
         context.putImageData(imagedata, 0, 0);
         const image = new Image();
         image.src = canvas.toDataURL();
+        delete canvas;
         return image;
     }
 </script>
