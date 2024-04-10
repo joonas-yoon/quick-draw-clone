@@ -12,7 +12,7 @@
             constructor() { }
 
             async load() {
-                this.session = await ort.InferenceSession.create('./public/model_cnn_74.onnx');
+                this.session = await ort.InferenceSession.create('https://cdn.jsdelivr.net/gh/joonas-yoon/quick-draw-clone/docs/model/cnn_74.onnx');
             }
 
             /**
@@ -282,7 +282,7 @@
             body.className = 'debug';
         }
 
-        const { label: _labels } = await fetch("/assets/labels.json")
+        const { label: _labels } = await fetch("https://cdn.jsdelivr.net/gh/joonas-yoon/quick-draw-clone/docs/assets/labels.json")
             .then(response => response.json());
         labels = _labels;
 
