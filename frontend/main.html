@@ -417,8 +417,14 @@
     window.onresize = resize;
 
     function resize() {
+        // resize canvas
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+        // reset crop box
+        cropBox.top = Infinity;
+        cropBox.left = Infinity;
+        cropBox.right = -Infinity;
+        cropBox.bottom = -Infinity;
     }
 
     /**
