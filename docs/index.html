@@ -12,7 +12,7 @@
             constructor() { }
 
             async load() {
-                this.session = await ort.InferenceSession.create('https://cdn.jsdelivr.net/gh/joonas-yoon/quick-draw-clone/docs/model/cnn_74.onnx');
+                this.session = await ort.InferenceSession.create('https://cdn.jsdelivr.net/gh/joonas-yoon/quick-draw-clone/docs/model/cnn_74.optimized.onnx');
             }
 
             /**
