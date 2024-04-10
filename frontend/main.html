@@ -148,6 +148,10 @@
     const canvasCopy = document.createElement("canvas");
     const copyContext = canvasCopy.getContext("2d");
 
+    const submitQueue = [];
+    let cumprob;
+    let candidatesPool;
+
     window.onload = async () => {
         resize();
 
@@ -196,6 +200,9 @@
         model = new Model();
         await model.load();
         console.log('loading time:', timeDelta(startTime, now()), 'ms');
+
+        candidatesPool = createNewPool(labels.length);
+        cumprob = _createLengthedArray(labels.length).map((x, i) => ({i, p: 0}));
 
         // inference loop
         let timer = null;
@@ -283,6 +290,20 @@
             showResultHTML(output.slice(0, SHOW_TOP_K).map(e => ({
                 ...e, label: labels[e.index]
             })));
+
+            // add scores on round
+            for (const {probability, index} of output) {
+                cumprob[index].p += probability;
+            }
+            cumprob.sort((a, b) => b.p - a.p);
+
+            // guess
+            const guessIndex = pickFirst(cumprob, candidatesPool);
+            if (guessIndex !== -1) {
+                submitQueue.push(guessIndex);
+                candidatesPool.delete(guessIndex);
+            }
+            console.log('submitQueue', submitQueue);
         };
     }
 
@@ -357,6 +378,23 @@
         image.src = canvas.toDataURL();
         delete canvas;
         return image;
+    }
+
+    function _createLengthedArray(length) {
+        return Array.from(new Array(length));
+    }
+
+    function createNewPool(length) {
+        return new Set(_createLengthedArray(length).map((x, i) => i));
+    }
+
+    function pickFirst(cumprob, filter) {
+        for (const {i, p} of cumprob) {
+            if (filter.has(i)) {
+                return i;
+            }
+        }
+        return -1;
     }
 </script>
 
