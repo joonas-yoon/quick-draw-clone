@@ -130,6 +130,7 @@
     const ctx = canvas.getContext('2d');
     const cursor = {
         isDrawing: false,
+        hasChange: false,
         px: null,
         py: null,
     };
@@ -169,7 +170,6 @@
                 console.log(cropBox);
                 // drawBox(cropBox);
             }
-            inference();
         });
         canvas.addEventListener('mousemove', (evt) => {
             if (!cursor.isDrawing) return;
@@ -177,6 +177,7 @@
             stroke(clientX, clientY, cursor.px, cursor.py, STROKE_SIZE);
             cursor.px = clientX;
             cursor.py = clientY;
+            cursor.hasChange = true;
             cropBox.isValid = true;
             const PADDING = 5;
             cropBox.top = Math.min(cropBox.top, clientY - PADDING);
@@ -195,6 +196,21 @@
         model = new Model();
         await model.load();
         console.log('loading time:', timeDelta(startTime, now()), 'ms');
+
+        // inference loop
+        let timer = null;
+        function humanLikeInferLoop() {
+            if (!timer) {
+                clearTimeout(timer);
+            }
+            if (cursor.hasChange) {
+                inference();
+                cursor.hasChange = false;
+            }
+            timer = setTimeout(humanLikeInferLoop, 2000 + Math.random() * 3000);
+        }
+
+        humanLikeInferLoop();
     };
 
     window.onresize = resize;
@@ -220,6 +236,11 @@
         const { top, left, right, bottom } = cropBox;
         const oImgWidth = right - left;
         const oImgHeight = bottom - top;
+
+        if (!isFinite(oImgWidth) || !isFinite(oImgHeight)) {
+            console.log('No information to inference right now');
+            return;
+        }
 
         const imageProcessStartTime = now();
         const imageDrawData = ctx.getImageData(left, top, oImgWidth, oImgHeight);
