@@ -133,7 +133,7 @@ function startGame() {
             cursor.hasChange = false;
         }
         return true;
-    }, 1000, 3000);
+    }, 1000, 2000);
 
     // cpu keep talking randomly
     createRandomInterval(() => {
@@ -149,7 +149,7 @@ function startGame() {
         ];
         cpuActions.push(createCpuMessageAction(randomChoice(randomTexts)));
         return true;
-    }, 2000, 4000);
+    }, 2000, 3000);
 
     // cpu does action and popped from queue
     createRandomInterval(() => {
