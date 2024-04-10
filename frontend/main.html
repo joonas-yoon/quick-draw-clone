@@ -76,22 +76,6 @@
         .result-items>li {
             list-style: none;
             color: #2b2b2b;
-            opacity: 0.1;
-        }
-
-        .result-items>li:nth-child(1) {
-            opacity: 1.0;
-        }
-
-        .result-items>li:nth-child(2) {
-            opacity: 0.75;
-        }
-
-        .result-items>li:nth-child(3) {
-            opacity: 0.5;
-        }
-
-        .result-items>li:nth-child(4) {
             opacity: 0.2;
         }
 
@@ -138,7 +122,7 @@
 
 <script type="text/javascript">
     const DEBUG = true;
-    const SHOW_TOP_K = 5;
+    const SHOW_TOP_K = 20;
 
     const body = document.body;
     const resultBox = document.getElementById('result');
@@ -335,7 +319,9 @@
     function showResultHTML(results) {
         resultBox.innerHTML = '';
         for (const { label, probability } of results) {
-            resultBox.innerHTML += `<li>${label['ko']} (${(probability * 100).toFixed(2)}%)</li>`;
+            const labelAlpha = Math.sqrt(probability);
+            const labelText = `${label['ko']} (${(probability * 100).toFixed(2)}%)`;
+            resultBox.innerHTML += `<li style="opacity: ${labelAlpha};">${labelText}</li>`;
         }
     }
 
@@ -345,7 +331,6 @@
         const context = canvas.getContext('2d');
         canvas.width = imagedata.width;
         canvas.height = imagedata.height;
-        console.log('canvas', canvas);
         context.putImageData(imagedata, 0, 0);
         const image = new Image();
         image.src = canvas.toDataURL();
