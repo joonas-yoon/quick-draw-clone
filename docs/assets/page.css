@@ -1,0 +1,157 @@
+html,
+body {
+    padding: 0;
+    margin: 0;
+    outline: 0;
+    border: none;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#root {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #fdfdfd;
+}
+
+.result-items {
+    position: fixed;
+    min-width: 120px;
+    width: fit-content;
+    height: fit-content;
+    display: block;
+    top: 0;
+    left: 0;
+    padding: 1em;
+    margin: 0;
+    user-select: none;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.result-items>li {
+    list-style: none;
+    color: #2b2b2b;
+    opacity: 0.2;
+}
+
+#preview {
+    display: none;
+    position: fixed;
+    right: 0;
+    z-index: 3;
+    top: 0;
+    border: 1px solid #ccc;
+    width: 120px;
+    height: 120px;
+}
+
+#canvas3 {
+    display: none;
+    position: fixed;
+    top: 120px;
+    right: 0;
+    z-index: 3;
+    border: 1px solid #ccc;
+    width: 120px;
+    height: 120px;
+}
+
+body.debug #preview,
+body.debug #canvas3 {
+    display: block;
+}
+
+.cpu-text-wrapper {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    left: 0;
+    bottom: 1rem;
+    margin: 0;
+    padding: 2em;
+    user-select: none;
+    pointer-events: none;
+    z-index: 99;
+}
+
+.cpu-text-wrapper .caption:empty {
+    display: none;
+}
+.cpu-text-wrapper .caption {
+    display: block;
+    margin: 0;
+    padding: 12px;
+    text-align: center;
+    width: fit-content;
+    color: #2a2a2a;
+    background-color: #efefef;
+    box-shadow: 4px 4px 0 rgba(98, 98, 98, 0.2);
+}
+
+.round-starter {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffd139;
+    z-index: 200;
+    transition: top 600ms ease-out;
+}
+
+.round-starter.hide {
+    top: -100vh;
+}
+
+.round-starter .description {
+    text-align: center;
+    margin-bottom: 1.25em;
+    font-size: 120%;
+}
+
+.round-starter .description p {
+    margin: 0.25em auto;
+}
+
+.round-starter .description #answer {
+    font-weight: bold;
+    font-size: 200%;
+}
+
+.game-btn {
+    padding: 10px 16px;
+    min-width: 180px;
+    min-height: 48px;
+    margin: 0;
+    color: #fefefe;
+    font-size: 18px;
+    font-weight: 200;
+    border: none;
+    background-color: #2eaa50;
+    box-shadow: -6px 6px 2px #237636;
+    cursor: pointer;
+    outline: 0;
+    transform: none;
+}
+.game-btn:active {
+    box-shadow: -3px 3px 1px #198737;
+    transform: translate(-3px, 3px);
+}
