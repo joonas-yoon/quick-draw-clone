@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="ko">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Web site created using create-react-app" />
-    <title>Quick Draw Clone</title>
+    <meta name="description" content="Clone application of Quick, Draw! by Google" />
+    <title>Quick, Draw! Clone</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
     <script type="text/javascript">
         class Model {
@@ -283,7 +282,7 @@
             body.className = 'debug';
         }
 
-        const { label: _labels } = await fetch("labels.json")
+        const { label: _labels } = await fetch("/assets/labels.json")
             .then(response => response.json());
         labels = _labels;
 
