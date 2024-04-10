@@ -105,6 +105,35 @@
         body.debug #canvas3 {
             display: block;
         }
+
+        .cpu-text-wrapper {
+            position: absolute;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            left: 0;
+            bottom: 1rem;
+            margin: 0;
+            padding: 2em;
+            user-select: none;
+            pointer-events: none;
+            z-index: 99;
+        }
+
+        .cpu-text-wrapper .caption:empty {
+            display: none;
+        }
+        .cpu-text-wrapper .caption {
+            display: block;
+            margin: 0;
+            padding: 12px;
+            text-align: center;
+            width: fit-content;
+            color: #2a2a2a;
+            background-color: #efefef;
+            box-shadow: 4px 4px 0 rgba(98, 98, 98, 0.2);
+        }
     </style>
 </head>
 
@@ -117,6 +146,9 @@
     </div>
     <div id="result" class="result-items">
         <li>...</li>
+    </div>
+    <div class="cpu-text-wrapper">
+        <div id="cpu-text" class="caption"></div>
     </div>
 </body>
 
@@ -148,9 +180,32 @@
     const canvasCopy = document.createElement("canvas");
     const copyContext = canvasCopy.getContext("2d");
 
-    const submitQueue = [];
+    let cpuActions = [];
     let cumprob;
     let candidatesPool;
+
+    const cpuTextElement = document.getElementById('cpu-text');
+
+    function createCpuMessageAction(message) {
+        return {
+            answer: null,
+            message
+        };
+    }
+
+    function createCpuAnswerAction(answer) {
+        const randomTexts = [
+            `이제 알겠어요, <strong>${answer}</strong> 인가요?`,
+            `정답! <strong>${answer}</strong> 이죠?`,
+            `혹시 <strong>${answer}</strong> 맞나요?`,
+            `...<strong>${answer}</strong>!`,
+            `<strong>${answer}</strong>!`,
+        ];
+        return {
+            answer,
+            message: randomChoice(randomTexts),
+        };
+    }
 
     window.onload = async () => {
         resize();
@@ -205,20 +260,50 @@
         cumprob = _createLengthedArray(labels.length).map((x, i) => ({i, p: 0}));
 
         // inference loop
-        let timer = null;
-        function humanLikeInferLoop() {
-            if (!timer) {
-                clearTimeout(timer);
-            }
+        createRandomInterval(() => {
             if (cursor.hasChange) {
                 inference();
                 cursor.hasChange = false;
             }
-            timer = setTimeout(humanLikeInferLoop, 2000 + Math.random() * 3000);
-        }
+        }, 2000, 5000);
 
-        humanLikeInferLoop();
+        // cpu keep talking randomly
+        createRandomInterval(() => {
+            const randomTexts = [
+                '...',
+                '음...',
+                '음... 뭘까요?',
+                '조금만 더 그려주세요',
+                '더 그려주시겠어요?',
+            ];
+            cpuActions.push(createCpuMessageAction(randomChoice(randomTexts)));
+        }, 2000, 4000);
+
+        // cpu does action and popped from queue
+        createRandomInterval(() => {
+            if (cpuActions.length < 1) {
+                return;
+            }
+            const {answer, message} = cpuActions[0];
+            cpuActions = cpuActions.slice(1); // pop
+            cpuTextElement.innerHTML = message;
+            if (answer !== null) {
+                console.log('GUESS WHAT:', answer);
+            }
+        }, 4000, 8000);
     };
+
+    function createRandomInterval(func, minMS, maxMS) {
+        let timer = null;
+        function _innerLoop() {
+            if (timer !== null) {
+                clearTimeout(timer);
+            }
+            func();
+            timer = setTimeout(_innerLoop, minMS + Math.random() * (maxMS - minMS));
+        }
+        _innerLoop();
+    }
 
     window.onresize = resize;
 
@@ -300,10 +385,11 @@
             // guess
             const guessIndex = pickFirst(cumprob, candidatesPool);
             if (guessIndex !== -1) {
-                submitQueue.push(guessIndex);
+                const labelString = labels[guessIndex]['ko'];
+                cpuActions.push(createCpuAnswerAction(labelString));
                 candidatesPool.delete(guessIndex);
             }
-            console.log('submitQueue', submitQueue);
+            console.log('cpuActionQueue', cpuActions);
         };
     }
 
@@ -356,6 +442,11 @@
 
     function timeDelta(t1, t2) {
         return t2 - t1;
+    }
+
+    function randomChoice(array) {
+        const index = Math.floor(Math.random() * array.length);
+        return array[index];
     }
 
     function showResultHTML(results) {
