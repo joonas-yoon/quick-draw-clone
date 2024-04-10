@@ -134,6 +134,60 @@
             background-color: #efefef;
             box-shadow: 4px 4px 0 rgba(98, 98, 98, 0.2);
         }
+
+        .round-starter {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffd139;
+            z-index: 200;
+            transition: top 600ms ease-out;
+        }
+
+        .round-starter.hide {
+            top: -100vh;
+        }
+
+        .round-starter .description {
+            text-align: center;
+            margin-bottom: 1.25em;
+            font-size: 120%;
+        }
+
+        .round-starter .description p {
+            margin: 0.25em auto;
+        }
+
+        .round-starter .description #answer {
+            font-weight: bold;
+            font-size: 200%;
+        }
+
+        .game-btn {
+            padding: 10px 16px;
+            min-width: 180px;
+            min-height: 48px;
+            margin: 0;
+            color: #fefefe;
+            font-size: 18px;
+            font-weight: 200;
+            border: none;
+            background-color: #2eaa50;
+            box-shadow: -6px 6px 2px #237636;
+            cursor: pointer;
+            outline: 0;
+            transform: none;
+        }
+        .game-btn:active {
+            box-shadow: -3px 3px 1px #198737;
+            transform: translate(-3px, 3px);
+        }
     </style>
 </head>
 
@@ -149,6 +203,14 @@
     </div>
     <div class="cpu-text-wrapper">
         <div id="cpu-text" class="caption"></div>
+    </div>
+    <div class="round-starter" id="round-start-page">
+        <div class="description">
+            <p>다음을 그려주세요.</p>
+            <p id="answer"></p>
+            <p class="time-text">30초 이내</p>
+        </div>
+        <button class="btn game-btn" id="start-button">알겠어요!</button>
     </div>
 </body>
 
@@ -183,8 +245,15 @@
     let cpuActions = [];
     let cumprob;
     let candidatesPool;
+    const gameState = {
+        answer: null,
+        isRunning: false,
+    };
 
     const cpuTextElement = document.getElementById('cpu-text');
+    const startPageElement = document.getElementById('round-start-page');
+    const startButton = document.getElementById('start-button');
+    const answerText = document.getElementById('answer');
 
     function createCpuMessageAction(message) {
         return {
@@ -219,6 +288,13 @@
         labels = _labels;
 
         console.log('labels', labels);
+
+        choiceAnswerForQuiz();
+
+        startButton.addEventListener('click', (evt) => {
+            evt.preventDefault();
+            startGame();
+        });
 
         canvas.addEventListener('mousedown', () => cursor.isDrawing = true);
         canvas.addEventListener('mouseup', () => {
@@ -258,17 +334,29 @@
 
         candidatesPool = createNewPool(labels.length);
         cumprob = _createLengthedArray(labels.length).map((x, i) => ({i, p: 0}));
+    };
+
+    function startGame() {
+        startPageElement.classList.add('hide');
+        gameState.isRunning = true;
 
         // inference loop
         createRandomInterval(() => {
+            if (!gameState.isRunning) {
+                return false;
+            }
             if (cursor.hasChange) {
                 inference();
                 cursor.hasChange = false;
             }
+            return true;
         }, 2000, 5000);
 
         // cpu keep talking randomly
         createRandomInterval(() => {
+            if (!gameState.isRunning) {
+                return false;
+            }
             const randomTexts = [
                 '...',
                 '음...',
@@ -277,30 +365,51 @@
                 '더 그려주시겠어요?',
             ];
             cpuActions.push(createCpuMessageAction(randomChoice(randomTexts)));
+            return true;
         }, 2000, 4000);
 
         // cpu does action and popped from queue
         createRandomInterval(() => {
+            if (!gameState.isRunning) {
+                return false;
+            }
             if (cpuActions.length < 1) {
-                return;
+                return true;
             }
             const {answer, message} = cpuActions[0];
             cpuActions = cpuActions.slice(1); // pop
             cpuTextElement.innerHTML = message;
             if (answer !== null) {
                 console.log('GUESS WHAT:', answer);
+                if (answer === gameState.answer) {
+                    endGame();
+                }
             }
+            return true;
         }, 4000, 8000);
-    };
+    }
+
+    function endGame() {
+        startPageElement.classList.remove('hide');
+        gameState.isRunning = false;
+        choiceAnswerForQuiz();
+    }
+
+    function choiceAnswerForQuiz() {
+        gameState.answer = randomChoice(labels)['ko'];
+        answerText.textContent = gameState.answer;
+    }
 
     function createRandomInterval(func, minMS, maxMS) {
+        console.log('func called', func);
         let timer = null;
         function _innerLoop() {
             if (timer !== null) {
                 clearTimeout(timer);
             }
-            func();
-            timer = setTimeout(_innerLoop, minMS + Math.random() * (maxMS - minMS));
+            if (func()) {
+                timer = setTimeout(_innerLoop, minMS + Math.random() * (maxMS - minMS));
+            }
         }
         _innerLoop();
     }
