@@ -49,6 +49,9 @@ body {
     color: #2b2b2b;
     opacity: 0.2;
 }
+.result-items>li.strike {
+    text-decoration: line-through;
+}
 
 body.debug .result-items {
     display: block;

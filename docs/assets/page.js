@@ -70,6 +70,9 @@ window.onload = async () => {
 
     console.log('labels', labels);
 
+    candidatesPool = createNewPool(labels.length);
+    cumprob = _createLengthedArray(labels.length).map((x, i) => ({i, p: 0}));
+
     choiceAnswerForQuiz();
     setupUI();
     setupCanvas();
@@ -137,9 +140,6 @@ async function setupCanvas() {
     model = new Model();
     await model.load();
     console.log('loading time:', timeDelta(startTime, now()), 'ms');
-
-    candidatesPool = createNewPool(labels.length);
-    cumprob = _createLengthedArray(labels.length).map((x, i) => ({i, p: 0}));
 }
 
 function clearCanvas() {
@@ -376,10 +376,15 @@ function randomChoice(array) {
 
 function showResultHTML(results) {
     resultBox.innerHTML = '';
-    for (const { label, probability } of results) {
-        const labelAlpha = Math.sqrt(probability);
-        const labelText = `${label['ko']} (${(probability * 100).toFixed(2)}%)`;
-        resultBox.innerHTML += `<li style="opacity: ${labelAlpha};">${labelText}</li>`;
+    console.log('candidatesPool', candidatesPool);
+    console.log('results', results);
+    for (const { label, probability, index } of results) {
+        const item = document.createElement('li');
+        const alreadyMentioned = !candidatesPool.has(index);
+        item.style = `opacity: ${Math.sqrt(probability)}`;
+        item.className = alreadyMentioned ? 'strike' : '';
+        item.textContent = `${label['ko']} (${(probability * 100).toFixed(2)}%)`;
+        resultBox.appendChild(item);
     }
 }
 
