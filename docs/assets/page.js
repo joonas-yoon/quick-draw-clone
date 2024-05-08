@@ -196,7 +196,7 @@ function startGame() {
             }
         }
         return true;
-    }, 4000, 8000);
+    }, 2000, 4000);
 }
 
 function endGame() {
