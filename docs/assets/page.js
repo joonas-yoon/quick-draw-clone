@@ -1,4 +1,3 @@
-const DEBUG = false;
 const SHOW_TOP_K = 20;
 
 const body = document.body;
@@ -58,12 +57,12 @@ function createCpuAnswerAction(answer) {
     };
 }
 
+function isDebug() {
+    return (body.className || "").indexOf("debug") !== -1;
+}
+
 window.onload = async () => {
     resize();
-
-    if (DEBUG) {
-        body.className = 'debug';
-    }
 
     const { label: _labels } = await fetch("https://cdn.jsdelivr.net/gh/joonas-yoon/quick-draw-clone/docs/assets/labels.json")
         .then(response => response.json());
@@ -89,6 +88,17 @@ function setupUI() {
         evt.preventDefault();
         clearCanvas();
     });
+    const debugButton = document.getElementById('debug-button');
+    debugButton.addEventListener('click', (evt) => {
+        evt.preventDefault();
+        if (!!debugButton.getAttribute('data-active')) {
+            debugButton.removeAttribute('data-active');
+            body.className = '';
+        } else {
+            debugButton.setAttribute('data-active', true);
+            body.className = 'debug';
+        }
+    });
 }
 
 async function setupCanvas() {
@@ -97,7 +107,7 @@ async function setupCanvas() {
         cursor.isDrawing = false;
         cursor.px = null;
         cursor.py = null;
-        if (DEBUG) {
+        if (isDebug()) {
             console.log(cropBox);
             // drawBox(cropBox);
         }
@@ -253,7 +263,7 @@ function inference() {
     const imageDrawData = ctx.getImageData(left, top, oImgWidth, oImgHeight);
     const imageDraw = imagedataToImage(imageDrawData);
     imageDraw.onload = async () => {
-        if (DEBUG) {
+        if (isDebug()) {
             document.getElementById('preview').src = imageDraw.src;
             console.log(oImgWidth, oImgHeight);
         }
@@ -262,7 +272,7 @@ function inference() {
         copyContext.clearRect(0, 0, 32, 32);
         copyContext.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
 
-        if (DEBUG) {
+        if (isDebug()) {
             const tempCtx = document.getElementById('canvas3').getContext('2d');
             tempCtx.clearRect(0, 0, 32, 32);
             tempCtx.drawImage(imageDraw, 0, 0, oImgWidth, oImgHeight, 0, 0, 32, 32);
@@ -272,7 +282,7 @@ function inference() {
         const imageResize = copyContext.getImageData(0, 0, 32, 32);
         const imageResizeRGB = imageResize.data.filter((value, index, _) => index % 4 != 0);
         const input = new Float32Array(imageResizeRGB).map(i => i / 255.);
-        if (DEBUG) {
+        if (isDebug()) {
             console.log('input image:', imageResize.data, input);
         }
         console.info('image processed in', timeDelta(imageProcessStartTime, now()), 'ms');
@@ -281,7 +291,7 @@ function inference() {
         const modelInferStartTime = now();
         const output = await model.infer(normalize(input));
         output.sort((a, b) => b.logit - a.logit);
-        if (DEBUG) {
+        if (isDebug()) {
             console.log('inference', output);
         }
         console.info('inferenced in', timeDelta(modelInferStartTime, now()), 'ms');

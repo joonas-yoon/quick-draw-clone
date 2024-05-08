@@ -34,7 +34,7 @@ body {
     min-width: 120px;
     width: fit-content;
     height: fit-content;
-    display: block;
+    display: none;
     top: 0;
     left: 0;
     padding: 1em;
@@ -48,6 +48,10 @@ body {
     list-style: none;
     color: #2b2b2b;
     opacity: 0.2;
+}
+
+body.debug .result-items {
+    display: block;
 }
 
 #preview {
@@ -193,6 +197,26 @@ body.debug #canvas3 {
 .btn-gray {
     color: #1a1a1a;
     background-color: #f2f2f2;
+}
+
+.btn-yellow {
+    color: #3f3f3f;
+    background-color: #F5D76E;
+}
+
+.btn-toggle {
+    transition: background-color 100ms ease-in-out;
+}
+.btn-toggle:active {
+    box-shadow: 2px 2px 0 rgba(98, 98, 98, 0.2);
+    transform: translate(2px, 2px);
+}
+
+.btn-toggle.shadow-right-down[data-active] {
+    box-shadow: 2px 2px 0 rgba(98, 98, 98, 0.2);
+    transform: translate(2px, 2px);
+    color: var(--color);
+    background-color: var(--active-color);
 }
 
 .shadow-right-down {
