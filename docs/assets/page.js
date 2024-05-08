@@ -89,6 +89,7 @@ function setupUI() {
     });
     document.getElementById('erase-button').addEventListener('click', (evt) => {
         evt.preventDefault();
+        resize();
         clearCanvas();
     });
     const debugButton = document.getElementById('debug-button');
