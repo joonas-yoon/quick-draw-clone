@@ -8,6 +8,7 @@
     <title>Quick, Draw! Clone</title>
     <link rel="stylesheet" href="assets/page.css" />
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <script src="https://kit.fontawesome.com/994409081c.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -21,7 +22,7 @@
         <li>...</li>
     </div>
     <div class="cpu-text-wrapper">
-        <div id="cpu-text" class="caption"></div>
+        <div id="cpu-text" class="caption shadow-right-down"></div>
     </div>
     <div class="round-starter" id="round-start-page">
         <div class="description">
@@ -29,7 +30,15 @@
             <p id="answer"></p>
             <p class="time-text">30초 이내</p>
         </div>
-        <button class="btn game-btn" id="start-button">알겠어요!</button>
+        <button class="btn btn-wide game-btn btn-green shadow-right-down" id="start-button">알겠어요!</button>
+    </div>
+    <div class="game-buttons">
+        <div id="restart-button" class="btn btn-icon game-btn text-center btn-red shadow-right-down">
+            <i class="fa fa-solid fa-rotate-right"></i>
+        </div>
+        <div id="erase-button" class="btn btn-icon game-btn text-center btn-gray shadow-right-down">
+            <i class="fa fa-solid fa-eraser"></i>
+        </div>
     </div>
 </body>
 <script type="text/javascript" src="assets/model.js"></script>

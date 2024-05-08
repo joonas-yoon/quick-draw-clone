@@ -35,7 +35,6 @@ const gameState = {
 
 const cpuTextElement = document.getElementById('cpu-text');
 const startPageElement = document.getElementById('round-start-page');
-const startButton = document.getElementById('start-button');
 const answerText = document.getElementById('answer');
 
 function createCpuMessageAction(message) {
@@ -73,12 +72,26 @@ window.onload = async () => {
     console.log('labels', labels);
 
     choiceAnswerForQuiz();
+    setupUI();
+    setupCanvas();
+};
 
-    startButton.addEventListener('click', (evt) => {
+function setupUI() {
+    document.getElementById('start-button').addEventListener('click', (evt) => {
         evt.preventDefault();
         startGame();
     });
+    document.getElementById('restart-button').addEventListener('click', (evt) => {
+        evt.preventDefault();
+        endGame();
+    });
+    document.getElementById('erase-button').addEventListener('click', (evt) => {
+        evt.preventDefault();
+        clearCanvas();
+    });
+}
 
+async function setupCanvas() {
     canvas.addEventListener('mousedown', () => cursor.isDrawing = true);
     canvas.addEventListener('mouseup', () => {
         cursor.isDrawing = false;
@@ -117,7 +130,11 @@ window.onload = async () => {
 
     candidatesPool = createNewPool(labels.length);
     cumprob = _createLengthedArray(labels.length).map((x, i) => ({i, p: 0}));
-};
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
 
 function startGame() {
     startPageElement.classList.add('hide');
@@ -175,6 +192,7 @@ function startGame() {
 function endGame() {
     startPageElement.classList.remove('hide');
     gameState.isRunning = false;
+    clearCanvas();
     choiceAnswerForQuiz();
 }
 

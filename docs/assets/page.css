@@ -10,6 +10,10 @@ body {
     box-sizing: border-box;
 }
 
+.text-center {
+    text-align: center;
+}
+
 #root {
     position: relative;
     width: 100vw;
@@ -99,7 +103,6 @@ body.debug #canvas3 {
     width: fit-content;
     color: #2a2a2a;
     background-color: #efefef;
-    box-shadow: 4px 4px 0 rgba(98, 98, 98, 0.2);
 }
 
 .round-starter {
@@ -136,22 +139,66 @@ body.debug #canvas3 {
     font-size: 200%;
 }
 
+.game-buttons {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: fit-content;
+    padding-top: 2em;
+    column-gap: 16px;
+}
+
 .game-btn {
     padding: 10px 16px;
-    min-width: 180px;
+    min-width: auto;
+    width: fit-content;
     min-height: 48px;
     margin: 0;
     color: #fefefe;
     font-size: 18px;
     font-weight: 200;
     border: none;
-    background-color: #2eaa50;
-    box-shadow: -6px 6px 2px #237636;
     cursor: pointer;
     outline: 0;
     transform: none;
 }
 .game-btn:active {
-    box-shadow: -3px 3px 1px #198737;
     transform: translate(-3px, 3px);
+}
+
+.btn-wide {
+    min-width: 180px;
+}
+
+.btn-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-green {
+    color: #fefefe;
+    background-color: #2eaa50;
+}
+
+.btn-red {
+    color: #fefefe;
+    background-color: #DC3023;
+}
+
+.btn-gray {
+    color: #1a1a1a;
+    background-color: #f2f2f2;
+}
+
+.shadow-right-down {
+    box-shadow: 4px 4px 0 rgba(98, 98, 98, 0.2);
+}
+.shadow-right-down:active {
+    box-shadow: 2px 2px 0 rgba(98, 98, 98, 0.2);
+    transform: translate(2px, 2px);
 }
