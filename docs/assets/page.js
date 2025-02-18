@@ -25,7 +25,6 @@ const canvasCopy = document.createElement("canvas");
 const copyContext = canvasCopy.getContext("2d");
 
 let cpuActions = [];
-let cumprob;
 let candidatesPool;
 const gameState = {
     answer: null,
@@ -39,11 +38,12 @@ const answerText = document.getElementById('answer');
 function createCpuMessageAction(message) {
     return {
         answer: null,
-        message
+        message,
+        id: null,
     };
 }
 
-function createCpuAnswerAction(answer) {
+function createCpuAnswerAction(answer, keywordId) {
     const randomTexts = [
         `이제 알겠어요, <strong>${answer}</strong> 인가요?`,
         `정답! <strong>${answer}</strong> 이죠?`,
@@ -54,6 +54,7 @@ function createCpuAnswerAction(answer) {
     return {
         answer,
         message: randomChoice(randomTexts),
+        id: keywordId,
     };
 }
 
@@ -71,7 +72,6 @@ window.onload = async () => {
     console.log('labels', labels);
 
     candidatesPool = createNewPool(labels.length);
-    cumprob = _createLengthedArray(labels.length).map((x, i) => ({i, p: 0}));
 
     choiceAnswerForQuiz();
     setupUI();
@@ -193,18 +193,24 @@ function startGame() {
         if (answer !== null) {
             console.log('GUESS WHAT:', answer);
             if (answer === gameState.answer) {
+                cpuTextElement.innerHTML = `알겠어요! 정답은 <strong></strong>!`;
                 endGame();
             }
         }
         return true;
     }, 2000, 4000);
+
+    // first cpu message
+    cpuActions.push(createCpuMessageAction('...'));
 }
 
 function endGame() {
     startPageElement.classList.remove('hide');
     gameState.isRunning = false;
-    clearCanvas();
-    choiceAnswerForQuiz();
+    setTimeout(() => {
+        clearCanvas();
+        choiceAnswerForQuiz();
+    }, 2000);
 }
 
 function choiceAnswerForQuiz() {
@@ -297,28 +303,31 @@ function inference() {
         }
         console.info('inferenced in', timeDelta(modelInferStartTime, now()), 'ms');
 
+        pickAnswer(output);
+
         // show result on HUD
         showResultHTML(output.slice(0, SHOW_TOP_K).map(e => ({
             ...e, label: labels[e.index]
         })));
-
-        pickAnswer(output);
     };
 
     function pickAnswer(predictProbs) {
-        // add scores on round, but decay
-        const DECAY_WEIGHT = 0.8;
-        for (const {probability, index} of predictProbs) {
-            cumprob[index].p *= DECAY_WEIGHT;
-            cumprob[index].p += probability;
+        // if already too many in queue, refresh answers
+        const readyAnswers = cpuActions.filter(({id}) => id != null);
+        console.log('=======================', { readyAnswers });
+        if (readyAnswers.length > 2) {
+            for (const { id } of readyAnswers) {
+                candidatesPool.add(id);
+            }
+            // clear
+            cpuActions = [];
         }
-        cumprob.sort((a, b) => b.p - a.p);
 
         // guess
-        const guessIndex = pickFirst(cumprob, candidatesPool);
+        const guessIndex = pickFirst(predictProbs, candidatesPool);
         if (guessIndex !== -1) {
             const labelString = labels[guessIndex]['ko'];
-            cpuActions.push(createCpuAnswerAction(labelString));
+            cpuActions.push(createCpuAnswerAction(labelString, guessIndex));
             candidatesPool.delete(guessIndex);
         }
         console.log('cpuActionQueue', cpuActions);
@@ -417,10 +426,10 @@ function createNewPool(length) {
     return new Set(_createLengthedArray(length).map((x, i) => i));
 }
 
-function pickFirst(cumprob, filter) {
-    for (const {i, p} of cumprob) {
-        if (filter.has(i)) {
-            return i;
+function pickFirst(predictProbs, filter) {
+    for (const {probability, index} of predictProbs) {
+        if (filter.has(index)) {
+            return index;
         }
     }
     return -1;
