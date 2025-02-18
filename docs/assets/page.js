@@ -71,8 +71,6 @@ window.onload = async () => {
 
     console.log('labels', labels);
 
-    candidatesPool = createNewPool(labels.length);
-
     choiceAnswerForQuiz();
     setupUI();
     setupCanvas();
@@ -214,6 +212,7 @@ function endGame() {
 }
 
 function choiceAnswerForQuiz() {
+    candidatesPool = createNewPool(labels.length);
     gameState.answer = randomChoice(labels)['ko'];
     answerText.textContent = gameState.answer;
 }
