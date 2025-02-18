@@ -161,7 +161,7 @@ function startGame() {
             cursor.hasChange = false;
         }
         return true;
-    }, 1000, 2000);
+    }, 600, 1500);
 
     // cpu keep talking randomly
     createRandomInterval(() => {
@@ -177,7 +177,7 @@ function startGame() {
         ];
         cpuActions.push(createCpuMessageAction(randomChoice(randomTexts)));
         return true;
-    }, 2000, 3000);
+    }, 3000, 4000);
 
     // cpu does action and popped from queue
     createRandomInterval(() => {
@@ -302,8 +302,14 @@ function inference() {
             ...e, label: labels[e.index]
         })));
 
-        // add scores on round
-        for (const {probability, index} of output) {
+        pickAnswer(output);
+    };
+
+    function pickAnswer(predictProbs) {
+        // add scores on round, but decay
+        const DECAY_WEIGHT = 0.8;
+        for (const {probability, index} of predictProbs) {
+            cumprob[index].p *= DECAY_WEIGHT;
             cumprob[index].p += probability;
         }
         cumprob.sort((a, b) => b.p - a.p);
@@ -316,7 +322,7 @@ function inference() {
             candidatesPool.delete(guessIndex);
         }
         console.log('cpuActionQueue', cpuActions);
-    };
+    }
 }
 
 function dist(x1, y1, x2, y2) {
@@ -382,7 +388,8 @@ function showResultHTML(results) {
     for (const { label, probability, index } of results) {
         const item = document.createElement('li');
         const alreadyMentioned = !candidatesPool.has(index);
-        item.style = `opacity: ${Math.sqrt(probability)}`;
+        const opacity = Math.max(0.15, Math.sqrt(Math.sqrt(probability)));
+        item.style = `opacity: ${opacity}`;
         item.className = alreadyMentioned ? 'strike' : '';
         item.textContent = `${label['ko']} (${(probability * 100).toFixed(2)}%)`;
         resultBox.appendChild(item);
